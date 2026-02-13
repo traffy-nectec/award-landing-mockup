@@ -146,7 +146,7 @@
         .feed-container {
             height: 350px;
             overflow-y: auto;
-            scrollbar-width: none; /* Hide standard scrollbar */
+            scrollbar-width: none;
         }
         .feed-item {
             animation: slideIn 0.5s ease-out forwards;
@@ -168,9 +168,26 @@
             z-index: 9999;
             border: 1px solid rgba(255,255,255,0.15);
             transform: translate(-50%, -100%);
+            margin-top: -15px;
+            font-weight: 500;
         }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Synchronized List Animations */
+        .list-item-sync {
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 0.4s ease, transform 0.4s ease, background-color 0.3s ease;
+        }
+        .list-item-hidden {
+            opacity: 0.2;
+            transform: translateX(-10px);
+        }
+        .list-item-highlight {
+            background-color: rgba(96, 165, 250, 0.15) !important;
+            border-left: 3px solid #60a5fa !important;
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-accent selection:text-white">
@@ -179,10 +196,12 @@
     <nav class="glass-nav fixed w-full z-50 transition-all duration-300">
         <div class="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="bg-fondue text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-lg">
+                <!-- LOGO: Replace src with your actual image path -->
+                <img src="traffy_logo.png" alt="Traffy Fondue" class="h-10 w-auto object-contain bg-white rounded-lg p-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                <div class="bg-fondue text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-lg hidden">
                     <i class="fa-solid fa-layer-group text-sm"></i>
                 </div>
-                <span class="font-bold text-lg tracking-tight text-white">Fondue Award</span>
+                <span class="font-bold text-lg tracking-tight text-white hidden md:block">Fondue Award</span>
             </div>
             <div class="hidden md:flex space-x-8 text-sm font-medium text-text-secondary">
                 <a href="#stats" class="text-white hover:text-accent transition">ภาพรวม</a>
@@ -190,7 +209,8 @@
                 <a href="#map" class="hover:text-white transition">พื้นที่</a>
                 <a href="#live" class="hover:text-white transition">Live Feed</a>
             </div>
-            <button class="bg-white text-black text-xs px-5 py-2.5 rounded-full hover:bg-gray-200 transition font-bold">เข้าสู่ระบบ</button>
+            <!-- Empty div for spacing since login is removed -->
+            <div class="w-10"></div>
         </div>
     </nav>
 
@@ -204,10 +224,10 @@
             <div class="xl:w-1/3 flex flex-col justify-center text-center xl:text-left">
                 <div class="inline-flex items-center justify-center xl:justify-start gap-2 mb-4">
                     <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-                    <span id="update-time" class="text-xs font-bold tracking-widest text-success uppercase">LIVE...</span>
+                    <span id="update-time" class="text-xs font-bold tracking-widest text-text-secondary uppercase">ข้อมูล ณ วันที่...</span>
                 </div>
                 <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4 text-white">พลังข้อมูล<br><span class="text-fondue-accent">เปลี่ยนประเทศไทย</span></h1>
-                <p class="text-text-secondary text-lg mb-8 font-light leading-relaxed">ข้อมูลการจัดการปัญหาเมืองแบบ Real-time ทั่วประเทศไทย เพื่อชีวิตที่ดีกว่าของประชาชน</p>
+                <p class="text-text-secondary text-lg mb-8 font-light leading-relaxed">ติดตามสถิติการแก้ไขปัญหาจากทุกหน่วยงานรัฐทั่วประเทศ ผ่านระบบโปร่งใสและตรวจสอบได้</p>
                 <div class="hidden xl:flex gap-4">
                      <button class="bg-fondue hover:bg-[#6b4a35] text-white px-8 py-3 rounded-full font-medium transition flex items-center gap-2 shadow-lg">
                         ดูอันดับยอดเยี่ยม <i class="fa-solid fa-trophy text-xs"></i>
@@ -218,6 +238,7 @@
             <!-- Hero Stats Grid -->
             <div class="xl:w-2/3" id="stats">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Total Tickets -->
                     <div class="bento-card md:col-span-2 rounded-3xl p-8 bg-fondue text-white shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[280px]">
                         <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
                         <div class="relative z-10">
@@ -225,12 +246,13 @@
                             <div class="flex items-baseline gap-2 mb-2">
                                 <span id="total-tickets-display" class="text-6xl md:text-7xl font-bold tracking-tight counter" data-target="1808598">0</span>
                             </div>
-                            <p class="text-white/60 text-sm font-medium">เรื่องร้องเรียนสะสมทั่วประเทศ</p>
+                            <p class="text-white/60 text-sm">เรื่องร้องเรียนสะสมทั่วประเทศ</p>
                         </div>
                         <div class="mt-6 flex items-end gap-1 h-16 w-full opacity-40">
-                            <div class="w-full bg-white rounded-t-sm h-[30%]"></div><div class="w-full bg-white rounded-t-sm h-[45%]"></div><div class="w-full bg-white rounded-t-sm h-[60%]"></div><div class="w-full bg-white rounded-t-sm h-[90%]"></div>
+                            <div class="w-full bg-white rounded-t-sm h-[30%]"></div><div class="w-full bg-white rounded-t-sm h-[45%]"></div><div class="w-full bg-white rounded-t-sm h-[40%]"></div><div class="w-full bg-white rounded-t-sm h-[60%]"></div><div class="w-full bg-white rounded-t-sm h-[55%]"></div><div class="w-full bg-white rounded-t-sm h-[75%]"></div><div class="w-full bg-white rounded-t-sm h-[65%]"></div><div class="w-full bg-white rounded-t-sm h-[85%]"></div><div class="w-full bg-white rounded-t-sm h-[90%]"></div><div class="w-full bg-white rounded-t-sm h-[100%]"></div>
                         </div>
                     </div>
+                    <!-- Efficiency -->
                     <div class="bento-card md:col-span-1 rounded-3xl p-6 bg-dark-surface flex flex-col items-center justify-center text-center relative min-h-[280px]">
                         <div class="relative w-36 h-36 mb-6">
                             <svg class="w-full h-full transform -rotate-90">
@@ -264,8 +286,8 @@
                         <div class="flex bg-black/40 p-1 rounded-xl border border-white/5">
                             <button onclick="updateHeatmapYear(2023)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white" id="btn-2023">2023</button>
                             <button onclick="updateHeatmapYear(2024)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white" id="btn-2024">2024</button>
-                            <button onclick="updateHeatmapYear(2025)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white" id="btn-2025">2025</button>
-                            <button onclick="updateHeatmapYear(2026)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-fondue text-white" id="btn-2026">2026</button>
+                            <button onclick="updateHeatmapYear(2025)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-fondue text-white" id="btn-2025">2025</button>
+                            <button onclick="updateHeatmapYear(2026)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white" id="btn-2026">2026</button>
                         </div>
                         <div class="flex items-center gap-3 text-[10px] text-text-secondary font-mono">
                             <div class="flex flex-col items-center"><span>0</span><div class="w-4 h-4 rounded-[3px] level-0 mt-1"></div></div>
@@ -284,9 +306,11 @@
                                 <span>อา.</span><span>อ.</span><span>พฤ.</span><span>ส.</span>
                             </div>
                             <div class="flex-1">
+                                <!-- Months Labels -->
                                 <div class="flex justify-between text-[10px] text-text-secondary mb-3 pr-4 font-bold tracking-widest uppercase opacity-50">
                                     <span>ม.ค.</span><span>ก.พ.</span><span>มี.ค.</span><span>เม.ย.</span><span>พ.ค.</span><span>มิ.ย.</span><span>ก.ค.</span><span>ส.ค.</span><span>ก.ย.</span><span>ต.ค.</span><span>พ.ย.</span><span>ธ.ค.</span>
                                 </div>
+                                <!-- Heatmap Grid -->
                                 <div id="calendar-heatmap" class="heatmap-grid"></div>
                             </div>
                         </div>
@@ -433,7 +457,7 @@
         const provinceData = {
             "เชียงราย": { date: "7 ก.พ. 68", status: "completed" }, "แม่ฮ่องสอน": { date: "ประสานวันอบรม", status: "pending" }, "เชียงใหม่": { date: "16 มิ.ย. 66", status: "completed" }, "พะเยา": { date: "9 พ.ย. 65", status: "completed" }, "น่าน": { date: "8 ส.ค. 67", status: "completed" }, "ลำพูน": { date: "25 พ.ย. 65", status: "completed" }, "ลำปาง": { date: "24 ก.ค. 66", status: "completed" }, "แพร่": { date: "-", status: "partial" }, "อุตรดิตถ์": { date: "25 มี.ค. 67", status: "completed" }, "สุโขทัย": { date: "-", status: "partial" }, "ตาก": { date: "11 พ.ย. 67", status: "completed" }, "กำแพงเพชร": { date: "-", status: "partial" }, "พิษณุโลก": { date: "-", status: "partial" }, "พิจิตร": { date: "-", status: "partial" }, "เพชรบูรณ์": { date: "10-13 ม.ค. 66", status: "completed" }, "นครสวรรค์": { date: "18 ก.ค. 68", status: "completed" }, "อุทัยธานี": { date: "ประสานวันอบรม", status: "pending" },
             "เลย": { date: "-", status: "partial" }, "หนองคาย": { date: "12 ธ.ค. 68", status: "completed" }, "บึงกาฬ": { date: "-", status: "partial" }, "หนองบัวลำภู": { date: "28 พ.ย. 68", status: "completed" }, "อุดรธานี": { date: "18 มี.ค. 67", status: "completed" }, "สกลนคร": { date: "ประสานวันอบรม", status: "pending" }, "นครพนม": { date: "14 ก.พ. 68", status: "completed" }, "ชัยภูมิ": { date: "-", status: "partial" }, "ขอนแก่น": { date: "4 พ.ย. 65", status: "completed" }, "กาฬสินธุ์": { date: "เม.ย 69", status: "pending" }, "มุกดาหาร": { date: "-", status: "partial" }, "มหาสารคาม": { date: "29 ส.ค. 68", status: "completed" }, "ร้อยเอ็ด": { date: "-", status: "partial" }, "ยโสธร": { date: "23 ก.พ. 67", status: "completed" }, "อำนาจเจริญ": { date: "-", status: "partial" }, "Surin": { date: "-", status: "partial" }, "ศรีสะเกษ": { date: "-", status: "partial" }, "สุรินทร์": { date: "-", status: "partial" }, "บุรีรัมย์": { date: "-", status: "partial" }, "นครราชสีมา": { date: "2 ส.ค. 65", status: "completed" },
-            "กาญจนบุรี": { date: "-", status: "partial" }, "สุพรรณบุรี": { date: "23 ม.ค. 69", status: "completed" }, "ชัยนาท": { date: "-", status: "partial" }, "สิงห์บุรี": { date: "28-29 ส.ค. 66", status: "completed" }, "ลพบุรี": { date: "-", status: "partial" }, "อ่างทอง": { date: "-", status: "partial" }, "สระบุรี": { date: "24-25 เม.ย. 66", status: "completed" }, "อยุธยา": { date: "24 ธ.ค. 68", status: "completed" }, "ปทุมธานี": { date: "-", status: "partial" }, "นนทบุรี": { date: "24 ต.ค. 66", status: "completed" }, "นครปฐม": { date: "26 พ.ค. 68", status: "completed" }, "ราชบุรี": { date: "-", status: "partial" }, "สมุทรสงคราม": { date: "-", status: "partial" }, "สมุทรสาคร": { date: "11 มี.ค. 67", status: "completed" }, "กทม.": { date: "10 มิ.ย. 65", status: "completed" }, "สมุทรปราการ": { date: "28 ก.พ - 1 มี.ค. 66", status: "completed" }, "นครนายก": { date: "-", status: "partial" }, "ปราจีนบุรี": { date: "30 พ.ย. 65", status: "completed" }, "สระแก้ว": { date: "-", status: "partial" }, "ฉะเชิงเทรา": { date: "-", status: "partial" }, "ชลบุรี": { date: "-", status: "partial" }, "ระยอง": { date: "13 พ.ค. 67", status: "completed" }, "จันทบุรี": { date: "-", status: "partial" }, "ตราด": { date: "6 ก.ย. 67", status: "completed" }, "อุบลราชธานี": { date: "6 ก.ย. 65", status: "completed" },
+            "กาญจนบุรี": { date: "-", status: "partial" }, "สุพรรณบุรี": { date: "23 ม.ค. 69", status: "completed" }, "ชัยนาท": { date: "-", status: "partial" }, "สิงห์บุรี": { date: "28-29 ส.ค. 66", status: "completed" }, "ลพบุรี": { date: "-", status: "partial" }, "อ่างทอง": { date: "-", status: "partial" }, "สระบุรี": { date: "24-25 เม.ย. 66", status: "completed" }, "อยุธยา": { date: "24 ธ.ค. 68", status: "completed" }, "ปทุมธานี": { date: "-", status: "partial" }, "นนทบุรี": { date: "24 ต.ค. 66", status: "completed" }, "นครปฐม": { date: "26 พ.ค. 68", status: "completed" }, "ราชบุรี": { date: "-", status: "partial" }, "สมุทรสงคราม": { date: "-", status: "partial" }, "สมุทรสาคร": { date: "11 มี.ค. 67", status: "completed" }, "กทม.": { date: "10 มิ.ย. 65", status: "completed" }, "สมุทรปราการ": { date: "28 ก.พ - 1 มี.ค. 66", status: "completed" }, "นครนายก": { date: "-", status: "partial" }, "ปราจีนบุรี": { date: "30 พ.ย. 65", status: "completed" }, "สระแก้ว": { date: "-", status: "partial" }, "ฉะเชิงเทรา": { date: "-", status: "partial" }, "ชลบุรี": { date: "-", status: "partial" }, "ระยอง": { date: "13 พ.ค. 67", status: "completed" }, "จันทบุรี": { date: "-", status: "partial" }, "ตราด": { date: "6 ก.ย. 67", status: "completed" },
             "เพชรบุรี": { date: "-", status: "partial" }, "ประจวบคีรีขันธ์": { date: "-", status: "partial" }, "ชุมพร": { date: "-", status: "partial" }, "ระนอง": { date: "20 มี.ค. 68", status: "completed" }, "สุราษฎร์ธานี": { date: "-", status: "partial" }, "พังงา": { date: "-", status: "partial" }, "ภูเก็ต": { date: "19-20 ธ.ค. 65", status: "completed" }, "กระบี่": { date: "-", status: "partial" }, "นครศรีธรรมราช": { date: "-", status: "partial" }, "ตรัง": { date: "22 ก.ย. 66", status: "completed" }, "พัทลุง": { date: "-", status: "partial" }, "สตูล": { date: "-", status: "partial" }, "สงขลา": { date: "-", status: "partial" }, "ปัตตานี": { date: "-", status: "partial" }, "ยะลา": { date: "-", status: "partial" }, "นราธิวาส": { date: "9 มี.ค 69", status: "pending" }
         };
 
@@ -464,24 +488,27 @@
         // --- CORE UI ---
         function updateTimestamp() {
             const now = new Date();
-            document.getElementById('update-time').innerText = 'อัปเดตล่าสุด: ' + now.toLocaleTimeString('th-TH');
+            const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+            document.getElementById('update-time').innerText = `ข้อมูล ณ วันที่ ${dateStr}`;
         }
-        setInterval(updateTimestamp, 1000);
         updateTimestamp();
 
         function reveal() {
             document.querySelectorAll(".reveal").forEach(el => {
                 if (el.getBoundingClientRect().top < window.innerHeight - 50) {
                     el.classList.add("active");
-                    if (el.querySelector('.counter') && !el.classList.contains('counted')) {
+                    
+                    // Stats Counters
+                    if (el.id === 'stats' && !el.classList.contains('counters-init')) {
                         startCounters(el);
-                        el.classList.add('counted');
-                        if (el.querySelector('#progress-circle')) {
+                        el.classList.add('counters-init');
+                         if (el.querySelector('#progress-circle')) {
                             el.querySelector('#progress-circle').style.strokeDashoffset = '92';
                         }
                     }
+
                     if (el.id === 'pulse' && !el.classList.contains('heatmap-init')) {
-                        generateHeatmap(2026);
+                        generateHeatmap(2025);
                         el.classList.add('heatmap-init');
                     }
                     if (el.id === 'map' && !el.classList.contains('map-played')) {
@@ -517,12 +544,11 @@
             if (!container) return;
             container.innerHTML = "";
             
-            // Standard GitHub heatmap logic: 53 weeks starting from Jan 1
             const startDate = new Date(year, 0, 1);
-            const firstDayIndex = startDate.getDay(); // 0 (Sun) to 6 (Sat)
+            const startDayOfWeek = startDate.getDay(); // 0 (Sun)
             
-            // Render padding for the first week
-            for (let p = 0; p < firstDayIndex; p++) {
+            // Render padding for first week based on Sunday start
+            for (let p = 0; p < startDayOfWeek; p++) {
                 const pad = document.createElement('div');
                 pad.className = 'w-[11px] h-[11px] opacity-0';
                 container.appendChild(pad);
@@ -545,7 +571,7 @@
                 day.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
                 
                 container.appendChild(day);
-                setTimeout(() => day.classList.add('show'), i * 3);
+                setTimeout(() => day.classList.add('show'), i * 2);
             }
         }
 
@@ -565,8 +591,7 @@
             "หน่วยงาน อบจ.ชลบุรี เชิญหน่วยงาน การไฟฟ้าฯ ร่วมแก้ไขเรื่องประเภท: สายไฟรกรุงรัง",
             "หน่วยงาน สน.ทองหล่อ รับแจ้งเรื่องประเภท: จอดรถกีดขวาง",
             "หน่วยงาน เทศบาลเมืองภูเก็ต รับเรื่องแจ้งประเภท: ฝาท่อระบายน้ำหาย",
-            "หน่วยงาน กรมทางหลวง รับแจ้งเรื่องประเภท: ไฟส่องสว่างดับ",
-            "หน่วยงาน กปน. ปรับสถานะเรื่องประเภท: ท่อประปาแตก เป็น กำลังดำเนินการ"
+            "หน่วยงาน กรมทางหลวง รับแจ้งเรื่องประเภท: ไฟส่องสว่างดับ"
         ];
         
         const feedback = [
@@ -584,15 +609,16 @@
             div.className = "feed-item p-3 mb-2 rounded-xl bg-white/5 border border-white/5 text-xs text-text-secondary";
             div.innerHTML = content;
             container.prepend(div);
-            if (container.children.length > 10) container.removeChild(container.lastChild);
+            if (container.children.length > 8) container.removeChild(container.lastChild);
         }
 
-        // Init Feeds
+        // Initialize Feeds Immediately
         function initFeeds() {
             for(let i=0; i<4; i++) {
-                const act = activities[i];
+                const act = activities[i % activities.length];
                 pushFeed('activity-feed', `<span class="text-accent font-bold"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span> - ${act}`);
-                const fb = feedback[i];
+                
+                const fb = feedback[i % feedback.length];
                 let starHtml = "";
                 for(let j=0; j<fb.stars; j++) starHtml += '<i class="fa-solid fa-star text-yellow-500 mr-0.5"></i>';
                 pushFeed('testimonial-feed', `<div class="font-bold text-white mb-1">${fb.name} ${starHtml}</div><div class="italic text-text-secondary">"${fb.msg}"</div>`);
@@ -603,6 +629,7 @@
         setInterval(() => {
             const act = activities[Math.floor(Math.random() * activities.length)];
             pushFeed('activity-feed', `<span class="text-accent font-bold"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span> - ${act}`);
+            
             if(Math.random() > 0.6) {
                 const fb = feedback[Math.floor(Math.random() * feedback.length)];
                 let starHtml = "";
@@ -612,7 +639,10 @@
         }, 3500);
 
         // --- MAP & LIST SYNC ---
-        document.querySelectorAll('.province').forEach(group => {
+        const mapGroups = document.querySelectorAll('.province');
+        // Removed the duplicate 'dots' declaration here to fix the error.
+        
+        mapGroups.forEach(group => {
             let thaiName = group.querySelector('title')?.textContent.split(' ')[0] || "";
             if (aliasMap[thaiName]) thaiName = aliasMap[thaiName];
             group.dataset.province = thaiName;
@@ -629,6 +659,14 @@
                     setTimeout(() => li.classList.remove('list-item-highlight'), 1000);
                 }
             });
+            
+             group.addEventListener('mousemove', (e) => {
+                dynamicTooltip.style.opacity = 1;
+                dynamicTooltip.innerHTML = `<div class="text-center"><strong>${thaiName}</strong><br><span class="text-xs opacity-80 block mb-1">${info.date !== '-' ? info.date : ''}</span><div class="mt-1 pt-1 border-t border-white/10 text-xs">${statusLabels[info.status]}</div></div>`;
+                dynamicTooltip.style.left = e.pageX + 'px';
+                dynamicTooltip.style.top = (e.pageY - 10) + 'px';
+            });
+            group.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
         });
 
         function renderList(filterText = "") {
