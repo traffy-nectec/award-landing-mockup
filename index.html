@@ -142,6 +142,27 @@
         .level-3 { background-color: #991b1b; }
         .level-4 { background-color: #7f1d1d; }
 
+        /* Mobile Monthly Heatmap */
+        .heatmap-monthly-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        .heatmap-month {
+            height: 40px;
+            border-radius: 4px;
+            background-color: #1c1c1e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #fff;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+        }
+        .heatmap-month.show { opacity: 1; transform: scale(1); }
+
         /* --- LIVE FEED STYLES --- */
         .feed-container {
             height: 350px;
@@ -188,6 +209,20 @@
             background-color: rgba(96, 165, 250, 0.15) !important;
             border-left: 3px solid #60a5fa !important;
         }
+
+        /* Map Legend Overlay */
+        .map-legend-overlay {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 10px;
+            z-index: 20;
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-accent selection:text-white">
@@ -196,7 +231,7 @@
     <nav class="glass-nav fixed w-full z-50 transition-all duration-300">
         <div class="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <!-- LOGO: Replace src with your actual image path -->
+                <!-- LOGO -->
                 <img src="traffy_logo.png" alt="Traffy Fondue" class="h-10 w-auto object-contain bg-white rounded-lg p-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
                 <div class="bg-fondue text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-lg hidden">
                     <i class="fa-solid fa-layer-group text-sm"></i>
@@ -209,7 +244,6 @@
                 <a href="#map" class="hover:text-white transition">พื้นที่</a>
                 <a href="#live" class="hover:text-white transition">Live Feed</a>
             </div>
-            <!-- Empty div for spacing since login is removed -->
             <div class="w-10"></div>
         </div>
     </nav>
@@ -217,17 +251,18 @@
     <div id="dynamic-tooltip"></div>
 
     <!-- Main Content Wrapper -->
-    <div class="pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto">
+    <!-- Reduced Top Padding for Mobile (pt-16) -->
+    <div class="pt-16 md:pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto">
         
         <!-- Hero Section -->
-        <div class="flex flex-col xl:flex-row gap-10 mb-12 reveal active">
+        <div class="flex flex-col xl:flex-row gap-6 md:gap-10 mb-8 md:mb-12 reveal active">
             <div class="xl:w-1/3 flex flex-col justify-center text-center xl:text-left">
-                <div class="inline-flex items-center justify-center xl:justify-start gap-2 mb-4">
+                <div class="inline-flex items-center justify-center xl:justify-start gap-2 mb-2 md:mb-4">
                     <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
                     <span id="update-time" class="text-xs font-bold tracking-widest text-text-secondary uppercase">ข้อมูล ณ วันที่...</span>
                 </div>
-                <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4 text-white">พลังข้อมูล<br><span class="text-fondue-accent">เปลี่ยนประเทศไทย</span></h1>
-                <p class="text-text-secondary text-lg mb-8 font-light leading-relaxed">ติดตามสถิติการแก้ไขปัญหาจากทุกหน่วยงานรัฐทั่วประเทศ ผ่านระบบโปร่งใสและตรวจสอบได้</p>
+                <h1 class="text-3xl md:text-5xl font-bold leading-tight mb-3 md:mb-4 text-white">พลังข้อมูล<br><span class="text-fondue-accent">เปลี่ยนประเทศไทย</span></h1>
+                <p class="text-text-secondary text-sm md:text-lg mb-6 md:mb-8 font-light leading-relaxed hidden md:block">ติดตามสถิติการแก้ไขปัญหาจากทุกหน่วยงานรัฐทั่วประเทศ ผ่านระบบโปร่งใสและตรวจสอบได้</p>
                 <div class="hidden xl:flex gap-4">
                      <button class="bg-fondue hover:bg-[#6b4a35] text-white px-8 py-3 rounded-full font-medium transition flex items-center gap-2 shadow-lg">
                         ดูอันดับยอดเยี่ยม <i class="fa-solid fa-trophy text-xs"></i>
@@ -239,34 +274,34 @@
             <div class="xl:w-2/3" id="stats">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <!-- Total Tickets -->
-                    <div class="bento-card md:col-span-2 rounded-3xl p-8 bg-fondue text-white shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[280px]">
+                    <div class="bento-card md:col-span-2 rounded-3xl p-6 md:p-8 bg-fondue text-white shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[220px] md:min-h-[280px]">
                         <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
                         <div class="relative z-10">
-                            <h3 class="text-lg font-medium text-white/90 mb-6">เรื่องแจ้งทั้งหมด</h3>
+                            <h3 class="text-lg font-medium text-white/90 mb-4 md:mb-6">เรื่องแจ้งทั้งหมด</h3>
                             <div class="flex items-baseline gap-2 mb-2">
-                                <span id="total-tickets-display" class="text-6xl md:text-7xl font-bold tracking-tight counter" data-target="1808598">0</span>
+                                <span id="total-tickets-display" class="text-5xl md:text-7xl font-bold tracking-tight counter" data-target="1808598">0</span>
                             </div>
                             <p class="text-white/60 text-sm">เรื่องร้องเรียนสะสมทั่วประเทศ</p>
                         </div>
-                        <div class="mt-6 flex items-end gap-1 h-16 w-full opacity-40">
+                        <div class="mt-4 md:mt-6 flex items-end gap-1 h-12 md:h-16 w-full opacity-40">
                             <div class="w-full bg-white rounded-t-sm h-[30%]"></div><div class="w-full bg-white rounded-t-sm h-[45%]"></div><div class="w-full bg-white rounded-t-sm h-[40%]"></div><div class="w-full bg-white rounded-t-sm h-[60%]"></div><div class="w-full bg-white rounded-t-sm h-[55%]"></div><div class="w-full bg-white rounded-t-sm h-[75%]"></div><div class="w-full bg-white rounded-t-sm h-[65%]"></div><div class="w-full bg-white rounded-t-sm h-[85%]"></div><div class="w-full bg-white rounded-t-sm h-[90%]"></div><div class="w-full bg-white rounded-t-sm h-[100%]"></div>
                         </div>
                     </div>
                     <!-- Efficiency -->
-                    <div class="bento-card md:col-span-1 rounded-3xl p-6 bg-dark-surface flex flex-col items-center justify-center text-center relative min-h-[280px]">
-                        <div class="relative w-36 h-36 mb-6">
+                    <div class="bento-card md:col-span-1 rounded-3xl p-6 bg-dark-surface flex flex-col items-center justify-center text-center relative min-h-[220px] md:min-h-[280px]">
+                        <div class="relative w-28 h-28 md:w-36 md:h-36 mb-4 md:mb-6">
                             <svg class="w-full h-full transform -rotate-90">
-                                <circle cx="72" cy="72" r="64" stroke="#2c2c2e" stroke-width="10" fill="transparent" />
-                                <circle id="progress-circle" cx="72" cy="72" r="64" stroke="#34C759" stroke-width="10" fill="transparent" stroke-dasharray="402" stroke-dashoffset="402" stroke-linecap="round" class="transition-all duration-[2000ms] ease-out" />
+                                <circle cx="50%" cy="50%" r="45%" stroke="#2c2c2e" stroke-width="10" fill="transparent" />
+                                <circle id="progress-circle" cx="50%" cy="50%" r="45%" stroke="#34C759" stroke-width="10" fill="transparent" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" class="transition-all duration-[2000ms] ease-out" />
                             </svg>
                             <div class="absolute inset-0 flex flex-col items-center justify-center">
                                 <div class="flex items-baseline">
-                                    <span class="text-4xl font-bold text-white counter" data-target="77">0</span>
-                                    <span class="text-lg font-bold text-success ml-0.5">%</span>
+                                    <span class="text-3xl md:text-4xl font-bold text-white counter" data-target="77">0</span>
+                                    <span class="text-base md:text-lg font-bold text-success ml-0.5">%</span>
                                 </div>
                             </div>
                         </div>
-                        <h3 class="text-xl font-bold text-white mb-1">แก้ไขเสร็จสิ้น</h3>
+                        <h3 class="text-lg md:text-xl font-bold text-white mb-1">แก้ไขเสร็จสิ้น</h3>
                         <p class="text-text-secondary text-xs">อัตราการจัดการปัญหาสำเร็จ</p>
                     </div>
                 </div>
@@ -275,67 +310,83 @@
 
         <!-- Calendar Heatmap Section -->
         <section id="pulse" class="mb-16 reveal">
-            <div class="bento-card rounded-3xl p-8 bg-dark-surface border border-white/5 overflow-hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div class="bento-card rounded-3xl p-6 md:p-8 bg-dark-surface border border-white/5 overflow-hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div>
                         <h3 class="text-xl font-bold text-white">จังหวะชีวิตของเมือง (City Pulse)</h3>
-                        <p class="text-text-secondary text-sm">ความหนาแน่นของการแจ้งเหตุรายวันย้อนหลัง (วันอาทิตย์ - วันเสาร์)</p>
+                        <p class="text-text-secondary text-sm">ความหนาแน่นของการแจ้งเหตุรายวันย้อนหลัง</p>
                     </div>
                     
-                    <div class="flex flex-col items-end gap-3">
-                        <div class="flex bg-black/40 p-1 rounded-xl border border-white/5">
-                            <button onclick="updateHeatmapYear(2023)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white" id="btn-2023">2023</button>
-                            <button onclick="updateHeatmapYear(2024)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white" id="btn-2024">2024</button>
-                            <button onclick="updateHeatmapYear(2025)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-fondue text-white" id="btn-2025">2025</button>
-                            <button onclick="updateHeatmapYear(2026)" class="year-btn px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white" id="btn-2026">2026</button>
+                    <div class="flex flex-col items-end gap-3 w-full md:w-auto">
+                        <div class="flex bg-black/40 p-1 rounded-xl border border-white/5 w-full md:w-auto justify-between md:justify-start">
+                            <button onclick="updateHeatmapYear(2023)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white flex-1 md:flex-none" id="btn-2023">2023</button>
+                            <button onclick="updateHeatmapYear(2024)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white flex-1 md:flex-none" id="btn-2024">2024</button>
+                            <button onclick="updateHeatmapYear(2025)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-fondue text-white flex-1 md:flex-none" id="btn-2025">2025</button>
+                            <button onclick="updateHeatmapYear(2026)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white flex-1 md:flex-none" id="btn-2026">2026</button>
                         </div>
-                        <div class="flex items-center gap-3 text-[10px] text-text-secondary font-mono">
-                            <div class="flex flex-col items-center"><span>0</span><div class="w-4 h-4 rounded-[3px] level-0 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>100</span><div class="w-4 h-4 rounded-[3px] level-1 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>200</span><div class="w-4 h-4 rounded-[3px] level-2 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>300</span><div class="w-4 h-4 rounded-[3px] level-3 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>400+</span><div class="w-4 h-4 rounded-[3px] level-4 mt-1"></div></div>
+                         <!-- Legend (Visible on Desktop) -->
+                         <div class="hidden md:flex items-center gap-3 text-[10px] text-text-secondary font-mono mt-2">
+                            <div class="flex flex-col items-center"><span>0</span><div class="w-3 h-3 rounded-[2px] level-0 mt-1"></div></div>
+                            <div class="flex flex-col items-center"><span>100</span><div class="w-3 h-3 rounded-[2px] level-1 mt-1"></div></div>
+                            <div class="flex flex-col items-center"><span>200</span><div class="w-3 h-3 rounded-[2px] level-2 mt-1"></div></div>
+                            <div class="flex flex-col items-center"><span>300</span><div class="w-3 h-3 rounded-[2px] level-3 mt-1"></div></div>
+                            <div class="flex flex-col items-center"><span>400+</span><div class="w-3 h-3 rounded-[2px] level-4 mt-1"></div></div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="overflow-x-auto no-scrollbar pb-2">
+                <!-- Desktop Heatmap (Daily) -->
+                <div class="hidden md:block overflow-x-auto no-scrollbar pb-2">
                     <div class="min-w-[850px]">
                         <div class="flex gap-4">
                             <div class="flex flex-col justify-between text-[10px] text-text-secondary pt-6 pb-2 h-28 font-bold">
                                 <span>อา.</span><span>อ.</span><span>พฤ.</span><span>ส.</span>
                             </div>
                             <div class="flex-1">
-                                <!-- Months Labels -->
                                 <div class="flex justify-between text-[10px] text-text-secondary mb-3 pr-4 font-bold tracking-widest uppercase opacity-50">
                                     <span>ม.ค.</span><span>ก.พ.</span><span>มี.ค.</span><span>เม.ย.</span><span>พ.ค.</span><span>มิ.ย.</span><span>ก.ค.</span><span>ส.ค.</span><span>ก.ย.</span><span>ต.ค.</span><span>พ.ย.</span><span>ธ.ค.</span>
                                 </div>
-                                <!-- Heatmap Grid -->
                                 <div id="calendar-heatmap" class="heatmap-grid"></div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Mobile Heatmap (Monthly Calendar) -->
+                <div class="md:hidden">
+                    <div class="flex justify-between items-center mb-4 bg-black/20 p-2 rounded-lg">
+                        <button id="mobile-prev-month" class="text-white hover:text-accent p-2"><i class="fa-solid fa-chevron-left"></i></button>
+                        <span id="mobile-current-month" class="text-sm font-bold text-white">มกราคม 2026</span>
+                        <button id="mobile-next-month" class="text-white hover:text-accent p-2"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    <!-- Weekday Headers -->
+                    <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] text-text-secondary font-bold">
+                        <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
+                    </div>
+                    <div id="monthly-heatmap" class="heatmap-monthly-grid">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- Thailand Map & List -->
-        <section id="map" class="py-12 bg-dark-surface rounded-3xl px-8 mb-16 border border-white/5 reveal">
+        <!-- Thailand Map & List (Updated Layout) -->
+        <section id="map" class="py-6 md:py-12 bg-dark-surface rounded-3xl px-4 md:px-8 mb-16 border border-white/5 reveal">
+            <!-- Vertical Stack on Mobile, Horizontal on Desktop -->
             <div class="flex flex-col lg:flex-row gap-8">
+                
+                <!-- Left/Top: Map + Legend -->
                 <div class="lg:w-1/2 flex flex-col">
-                    <div class="mb-6 relative">
-                        <h2 class="text-2xl font-bold text-white mb-2">พื้นที่ครอบคลุมทั่วไทย</h2>
-                        <button onclick="replayMapAnimation()" class="absolute top-0 right-0 text-xs bg-white/10 hover:bg-blue-500 hover:text-white text-white px-3 py-1 rounded-full transition flex items-center gap-1 z-20"><i class="fa-solid fa-rotate-right"></i> เล่นซ้ำ</button>
-                        <div class="flex flex-wrap gap-4 mt-4 text-xs font-medium">
-                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-success shadow-[0_0_8px_rgba(52,199,89,0.5)]"></span><span class="text-white">ครบ 100%</span></div>
-                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-pending shadow-[0_0_8px_rgba(255,159,10,0.5)]"></span><span class="text-white">รอการอบรม</span></div>
-                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-partial shadow-[0_0_8px_rgba(0,0,0,0.5)]"></span><span class="text-white">ใช้งานบางพื้นที่</span></div>
-                        </div>
+                    <div class="mb-4 relative flex justify-between items-center">
+                        <h2 class="text-xl md:text-2xl font-bold text-white">พื้นที่ครอบคลุม</h2>
+                        <button onclick="replayMapAnimation()" class="text-xs bg-white/10 hover:bg-blue-500 hover:text-white text-white px-3 py-1.5 rounded-full transition flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> รีเซ็ต</button>
                     </div>
-                    <div class="map-wrapper rounded-2xl overflow-hidden border border-white/5 bg-black/30" id="map-container">
-                        <!-- SVG Thailand Dot Map -->
+                    
+                    <!-- Map Container -->
+                    <div class="map-wrapper rounded-2xl overflow-hidden border border-white/5 bg-black/30 w-full" id="map-container">
                         <svg id="thailand-svg" width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
-                            <g transform="translate(-105, 30) scale(14)" class="map-group">
+                             <g transform="translate(-105, 30) scale(14)" class="map-group">
+                                <!-- SVG Paths -->
                                 <g id="Chiang_Rai" class="province"><title>เชียงราย (Chiang Rai)</title><circle cx="16" cy="2"/><circle cx="17" cy="2"/><circle cx="17" cy="3"/><circle cx="18" cy="3"/></g>
                                 <g id="Chiang_Mai" class="province"><title>เชียงใหม่ (Chiang Mai)</title><circle cx="13" cy="3"/><circle cx="14" cy="3"/><circle cx="15" cy="3"/><circle cx="13" cy="4"/><circle cx="14" cy="4"/><circle cx="15" cy="4"/><circle cx="13" cy="5"/><circle cx="14" cy="5"/></g>
                                 <g id="Mae_Hong_Son" class="province"><title>แม่ฮ่องสอน (Mae Hong Son)</title><circle cx="11" cy="4"/><circle cx="12" cy="4"/><circle cx="11" cy="5"/><circle cx="12" cy="5"/><circle cx="11" cy="6"/><circle cx="12" cy="6"/></g>
@@ -415,17 +466,26 @@
                                 <g id="Narathiwat" class="province"><title>นราธิวาส (Narathiwat)</title><circle cx="21" cy="36"/><circle cx="22" cy="36"/><circle cx="21" cy="37"/></g>
                             </g>
                         </svg>
+                        
+                         <!-- Legend Overlay -->
+                         <div class="map-legend-overlay flex flex-col gap-2">
+                             <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-success shadow-[0_0_8px_rgba(52,199,89,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">ครบทุกหน่วยราชการ <span id="count-completed" class="font-mono text-accent">0</span></span></div>
+                             <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-pending shadow-[0_0_8px_rgba(255,159,10,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">รอการอบรม <span id="count-pending" class="font-mono text-accent">0</span></span></div>
+                             <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-partial shadow-[0_0_8px_rgba(0,0,0,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">ใช้งานบางพื้นที่ <span id="count-partial" class="font-mono text-accent">0</span></span></div>
+                         </div>
                     </div>
                 </div>
 
-                <div class="lg:w-1/2 flex flex-col h-[600px] bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
-                     <div class="p-4 border-b border-white/10 bg-dark-surface/80 backdrop-blur z-10 relative">
-                        <div class="relative">
+                <!-- Right/Bottom: Filter & List -->
+                <div class="lg:w-1/2 flex flex-col h-auto md:h-[600px] bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
+                     <div class="p-4 border-b border-white/10 bg-dark-surface/80 backdrop-blur z-10 sticky top-0">
+                        <!-- Sticky Search -->
+                        <div class="relative mb-0">
                             <i class="fa-solid fa-search absolute left-3 top-3 text-text-secondary text-xs"></i>
-                            <input type="text" id="province-search" placeholder="ค้นหาจังหวัด..." class="w-full bg-black/30 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-accent/50">
+                            <input type="text" id="province-search" placeholder="ค้นหา / แนะนำจังหวัด..." class="w-full bg-black/30 border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-accent/50 placeholder-text-secondary/50">
                         </div>
                      </div>
-                     <div class="flex-1 overflow-y-auto custom-scroll p-4 pb-20 space-y-4 relative" id="province-list-container"></div>
+                     <div class="flex-1 overflow-y-auto custom-scroll p-4 pb-20 relative" id="province-list-container"></div>
                 </div>
             </div>
         </section>
@@ -454,18 +514,18 @@
 
     <script>
         // --- DATA & CONSTANTS ---
+        const aliasMap = { "กรุงเทพมหานคร": "กทม.", "พระนครศรีอยุธยา": "อยุธยา" };
+        const statusLabels = { 
+            'completed': '<span class="text-success">ครบทุกหน่วยราชการ</span>', 
+            'pending': '<span class="text-pending">รอการอบรม</span>', 
+            'partial': '<span class="text-white/60">ใช้งานบางพื้นที่</span>' 
+        };
+
         const provinceData = {
             "เชียงราย": { date: "7 ก.พ. 68", status: "completed" }, "แม่ฮ่องสอน": { date: "ประสานวันอบรม", status: "pending" }, "เชียงใหม่": { date: "16 มิ.ย. 66", status: "completed" }, "พะเยา": { date: "9 พ.ย. 65", status: "completed" }, "น่าน": { date: "8 ส.ค. 67", status: "completed" }, "ลำพูน": { date: "25 พ.ย. 65", status: "completed" }, "ลำปาง": { date: "24 ก.ค. 66", status: "completed" }, "แพร่": { date: "-", status: "partial" }, "อุตรดิตถ์": { date: "25 มี.ค. 67", status: "completed" }, "สุโขทัย": { date: "-", status: "partial" }, "ตาก": { date: "11 พ.ย. 67", status: "completed" }, "กำแพงเพชร": { date: "-", status: "partial" }, "พิษณุโลก": { date: "-", status: "partial" }, "พิจิตร": { date: "-", status: "partial" }, "เพชรบูรณ์": { date: "10-13 ม.ค. 66", status: "completed" }, "นครสวรรค์": { date: "18 ก.ค. 68", status: "completed" }, "อุทัยธานี": { date: "ประสานวันอบรม", status: "pending" },
             "เลย": { date: "-", status: "partial" }, "หนองคาย": { date: "12 ธ.ค. 68", status: "completed" }, "บึงกาฬ": { date: "-", status: "partial" }, "หนองบัวลำภู": { date: "28 พ.ย. 68", status: "completed" }, "อุดรธานี": { date: "18 มี.ค. 67", status: "completed" }, "สกลนคร": { date: "ประสานวันอบรม", status: "pending" }, "นครพนม": { date: "14 ก.พ. 68", status: "completed" }, "ชัยภูมิ": { date: "-", status: "partial" }, "ขอนแก่น": { date: "4 พ.ย. 65", status: "completed" }, "กาฬสินธุ์": { date: "เม.ย 69", status: "pending" }, "มุกดาหาร": { date: "-", status: "partial" }, "มหาสารคาม": { date: "29 ส.ค. 68", status: "completed" }, "ร้อยเอ็ด": { date: "-", status: "partial" }, "ยโสธร": { date: "23 ก.พ. 67", status: "completed" }, "อำนาจเจริญ": { date: "-", status: "partial" }, "Surin": { date: "-", status: "partial" }, "ศรีสะเกษ": { date: "-", status: "partial" }, "สุรินทร์": { date: "-", status: "partial" }, "บุรีรัมย์": { date: "-", status: "partial" }, "นครราชสีมา": { date: "2 ส.ค. 65", status: "completed" },
             "กาญจนบุรี": { date: "-", status: "partial" }, "สุพรรณบุรี": { date: "23 ม.ค. 69", status: "completed" }, "ชัยนาท": { date: "-", status: "partial" }, "สิงห์บุรี": { date: "28-29 ส.ค. 66", status: "completed" }, "ลพบุรี": { date: "-", status: "partial" }, "อ่างทอง": { date: "-", status: "partial" }, "สระบุรี": { date: "24-25 เม.ย. 66", status: "completed" }, "อยุธยา": { date: "24 ธ.ค. 68", status: "completed" }, "ปทุมธานี": { date: "-", status: "partial" }, "นนทบุรี": { date: "24 ต.ค. 66", status: "completed" }, "นครปฐม": { date: "26 พ.ค. 68", status: "completed" }, "ราชบุรี": { date: "-", status: "partial" }, "สมุทรสงคราม": { date: "-", status: "partial" }, "สมุทรสาคร": { date: "11 มี.ค. 67", status: "completed" }, "กทม.": { date: "10 มิ.ย. 65", status: "completed" }, "สมุทรปราการ": { date: "28 ก.พ - 1 มี.ค. 66", status: "completed" }, "นครนายก": { date: "-", status: "partial" }, "ปราจีนบุรี": { date: "30 พ.ย. 65", status: "completed" }, "สระแก้ว": { date: "-", status: "partial" }, "ฉะเชิงเทรา": { date: "-", status: "partial" }, "ชลบุรี": { date: "-", status: "partial" }, "ระยอง": { date: "13 พ.ค. 67", status: "completed" }, "จันทบุรี": { date: "-", status: "partial" }, "ตราด": { date: "6 ก.ย. 67", status: "completed" },
             "เพชรบุรี": { date: "-", status: "partial" }, "ประจวบคีรีขันธ์": { date: "-", status: "partial" }, "ชุมพร": { date: "-", status: "partial" }, "ระนอง": { date: "20 มี.ค. 68", status: "completed" }, "สุราษฎร์ธานี": { date: "-", status: "partial" }, "พังงา": { date: "-", status: "partial" }, "ภูเก็ต": { date: "19-20 ธ.ค. 65", status: "completed" }, "กระบี่": { date: "-", status: "partial" }, "นครศรีธรรมราช": { date: "-", status: "partial" }, "ตรัง": { date: "22 ก.ย. 66", status: "completed" }, "พัทลุง": { date: "-", status: "partial" }, "สตูล": { date: "-", status: "partial" }, "สงขลา": { date: "-", status: "partial" }, "ปัตตานี": { date: "-", status: "partial" }, "ยะลา": { date: "-", status: "partial" }, "นราธิวาส": { date: "9 มี.ค 69", status: "pending" }
-        };
-
-        const aliasMap = { "กรุงเทพมหานคร": "กทม.", "พระนครศรีอยุธยา": "อยุธยา" };
-        const statusLabels = { 
-            'completed': '<span class="text-success">ใช้งานครบ 100%</span>', 
-            'pending': '<span class="text-pending">รอการอบรม</span>', 
-            'partial': '<span class="text-white/60">ใช้งานบางพื้นที่</span>' 
         };
 
         // --- UTILS ---
@@ -484,6 +544,7 @@
         const listContainer = document.getElementById('province-list-container');
         const dynamicTooltip = document.getElementById('dynamic-tooltip');
         const dots = [];
+        let currentMobileDate = new Date();
 
         // --- CORE UI ---
         function updateTimestamp() {
@@ -493,36 +554,33 @@
         }
         updateTimestamp();
 
-        function reveal() {
+        // Initialize immediately
+        window.addEventListener('DOMContentLoaded', () => {
+             startCounters(document); 
+             generateHeatmap(2025);
+             playMapSequence();
+             renderList();
+             initFeeds();
+             updateLegendCounts();
+             
+             // Initial Check for viewport
+             if(window.innerWidth < 768) {
+                 renderMobileHeatmap(currentMobileDate);
+             }
+        });
+
+        // Scroll Reveal
+        window.addEventListener("scroll", () => {
             document.querySelectorAll(".reveal").forEach(el => {
                 if (el.getBoundingClientRect().top < window.innerHeight - 50) {
                     el.classList.add("active");
-                    
-                    // Stats Counters
-                    if (el.id === 'stats' && !el.classList.contains('counters-init')) {
-                        startCounters(el);
-                        el.classList.add('counters-init');
-                         if (el.querySelector('#progress-circle')) {
-                            el.querySelector('#progress-circle').style.strokeDashoffset = '92';
-                        }
-                    }
-
-                    if (el.id === 'pulse' && !el.classList.contains('heatmap-init')) {
-                        generateHeatmap(2025);
-                        el.classList.add('heatmap-init');
-                    }
-                    if (el.id === 'map' && !el.classList.contains('map-played')) {
-                        el.classList.add('map-played');
-                        setTimeout(playMapSequence, 500);
-                    }
                 }
             });
-        }
-        window.addEventListener("scroll", reveal);
-        setTimeout(reveal, 100);
+        });
 
         function startCounters(section) {
-            const counters = section.querySelectorAll('.counter');
+             const scope = section || document; 
+            const counters = scope.querySelectorAll('.counter');
             counters.forEach(counter => {
                 let target = parseInt(counter.getAttribute('data-target'));
                 const startTime = performance.now();
@@ -536,14 +594,18 @@
                 }
                 requestAnimationFrame(updateCount);
             });
+             const circle = document.querySelector('#progress-circle');
+            if (circle) {
+                // Ensure the circle stroke animation plays
+                setTimeout(() => { circle.style.strokeDashoffset = '65'; }, 100);
+            }
         }
 
         // --- CALENDAR HEATMAP ---
         function generateHeatmap(year) {
             const container = document.getElementById('calendar-heatmap');
-            if (!container) return;
+            if (!container) return; // Desktop container
             container.innerHTML = "";
-            
             const startDate = new Date(year, 0, 1);
             const startDayOfWeek = startDate.getDay(); // 0 (Sun)
             
@@ -583,6 +645,50 @@
             document.getElementById(`btn-${year}`)?.classList.add('bg-fondue', 'text-white');
             generateHeatmap(year);
         }
+
+        // --- MOBILE MONTHLY HEATMAP ---
+        function renderMobileHeatmap(date) {
+            const container = document.getElementById('monthly-heatmap');
+            const label = document.getElementById('mobile-current-month');
+            if(!container) return;
+            
+            container.innerHTML = "";
+            label.innerText = date.toLocaleDateString('th-TH', {month:'long', year:'numeric'});
+            
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const startDay = new Date(year, month, 1).getDay();
+
+            for(let i=0; i<startDay; i++) {
+                 const pad = document.createElement('div');
+                 container.appendChild(pad);
+            }
+
+            for(let i=1; i<=daysInMonth; i++) {
+                const day = document.createElement('div');
+                const level = Math.floor(Math.random() * 5);
+                const count = level * 50 + Math.floor(Math.random() * 20);
+                day.className = `heatmap-month level-${level}`;
+                day.innerText = i; // Show day number
+                day.classList.add('flex', 'items-center', 'justify-center', 'text-[10px]', 'text-white/70');
+                
+                day.addEventListener('click', () => {
+                     alert(`วันที่ ${i} ${label.innerText}: แจ้ง ${count} เรื่อง`);
+                });
+                container.appendChild(day);
+                setTimeout(() => day.classList.add('show'), i * 20);
+            }
+        }
+
+        document.getElementById('mobile-prev-month').addEventListener('click', () => {
+            currentMobileDate.setMonth(currentMobileDate.getMonth() - 1);
+            renderMobileHeatmap(currentMobileDate);
+        });
+        document.getElementById('mobile-next-month').addEventListener('click', () => {
+            currentMobileDate.setMonth(currentMobileDate.getMonth() + 1);
+            renderMobileHeatmap(currentMobileDate);
+        });
 
         // --- LIVE FEEDS ---
         const activities = [
@@ -638,9 +744,20 @@
             }
         }, 3500);
 
-        // --- MAP & LIST SYNC ---
+        // --- MAP LOGIC ---
+        function updateLegendCounts() {
+            const counts = { completed: 0, pending: 0, partial: 0 };
+            Object.values(provinceData).forEach(d => {
+                if (counts[d.status] !== undefined) counts[d.status]++;
+                else counts['partial']++; // Default fallback
+            });
+            document.getElementById('count-completed').innerText = counts.completed;
+            document.getElementById('count-pending').innerText = counts.pending;
+            document.getElementById('count-partial').innerText = counts.partial;
+        }
+
         const mapGroups = document.querySelectorAll('.province');
-        // Removed the duplicate 'dots' declaration here to fix the error.
+        // REMOVED DUPLICATE DECLARATION OF DOTS HERE
         
         mapGroups.forEach(group => {
             let thaiName = group.querySelector('title')?.textContent.split(' ')[0] || "";
@@ -650,13 +767,24 @@
             dots.push({ el: group, name: thaiName, data: info, dateObj: parseThaiDate(info.date) });
 
             group.addEventListener('mouseenter', () => {
-                const li = document.querySelector(`[data-list-prov="${thaiName}"]`);
-                if(li) {
-                    const gridWrapper = li.closest('.grid')?.parentElement;
-                    gridWrapper?.classList.remove('hidden');
-                    listContainer?.scrollTo({ top: li.offsetTop - 120, behavior: 'smooth' });
-                    li.classList.add('list-item-highlight');
-                    setTimeout(() => li.classList.remove('list-item-highlight'), 1000);
+                // No list scrolling on mobile by design request ("don't show list on mobile")
+                // Only on desktop do we scroll
+                if(window.innerWidth >= 768) {
+                    const li = document.querySelector(`[data-list-prov="${thaiName}"]`);
+                    if(li) {
+                        const gridWrapper = li.closest('.grid')?.parentElement;
+                        
+                        // Auto expand group if hidden
+                        if (gridWrapper && gridWrapper.classList.contains('hidden')) {
+                             gridWrapper.classList.remove('hidden');
+                             const icon = gridWrapper.previousElementSibling.querySelector('.fa-chevron-down');
+                             if(icon) icon.classList.add('rotate-180');
+                        }
+                        
+                        listContainer?.scrollTo({ top: li.offsetTop - 120, behavior: 'smooth' });
+                        li.classList.add('list-item-highlight');
+                        setTimeout(() => li.classList.remove('list-item-highlight'), 1000);
+                    }
                 }
             });
             
@@ -672,34 +800,65 @@
         function renderList(filterText = "") {
             if (!listContainer) return;
             listContainer.innerHTML = "";
-            const groups = { 'completed': { title: 'ใช้งานครบ 100%', color: 'text-success', icon: 'fa-check-circle' }, 'pending': { title: 'รอการอบรม', color: 'text-pending', icon: 'fa-clock' }, 'partial': { title: 'ใช้งานบางพื้นที่', color: 'text-white/60', icon: 'fa-map-pin' } };
+            const groups = { 
+                'completed': { title: 'ครบทุกหน่วยราชการ', color: 'text-success', icon: 'fa-check-circle' }, 
+                'pending': { title: 'รอการอบรม', color: 'text-pending', icon: 'fa-clock' }, 
+                'partial': { title: 'ใช้งานบางพื้นที่', color: 'text-white/60', icon: 'fa-map-pin' } 
+            };
+            
+            const isMobile = window.innerWidth < 768; // Simple check for mobile logic
+
             Object.keys(groups).forEach(key => {
                 const provinces = Object.entries(provinceData).filter(([name, data]) => data.status === key && name.includes(filterText)).sort((a, b) => parseThaiDate(a[1].date) - parseThaiDate(b[1].date));
                 if (provinces.length === 0) return;
-                const isPartial = key === 'partial';
-                const container = document.createElement('div');
-                container.className = 'mb-2';
+                
+                const groupContainer = document.createElement('div');
+                groupContainer.className = 'mb-2';
+                
                 const header = document.createElement('h4');
-                header.className = `text-sm font-bold uppercase p-3 rounded-lg bg-white/5 flex justify-between items-center ${groups[key].color} ${isPartial ? 'cursor-pointer hover:bg-white/10' : ''}`;
-                header.innerHTML = `<div><i class="fa-solid ${groups[key].icon} mr-2"></i>${groups[key].title} (${provinces.length})</div>${isPartial ? '<i class="fa-solid fa-chevron-down transform rotate-180"></i>' : ''}`;
-                container.appendChild(header);
+                // Header is clickable for all groups to toggle
+                header.className = `text-sm font-bold uppercase p-3 rounded-lg bg-white/5 flex justify-between items-center ${groups[key].color} cursor-pointer hover:bg-white/10`;
+                header.innerHTML = `<div><i class="fa-solid ${groups[key].icon} mr-2"></i>${groups[key].title} (${provinces.length})</div><i class="fa-solid fa-chevron-down transform transition-transform duration-300"></i>`;
+                groupContainer.appendChild(header);
+                
                 const gridWrapper = document.createElement('div');
-                if (isPartial && !filterText) gridWrapper.classList.add('hidden');
-                if (isPartial) header.addEventListener('click', () => { gridWrapper.classList.toggle('hidden'); header.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180'); });
+                // Default behavior: 
+                // - If Searching: Always Open
+                // - If Mobile: Always Collapsed (unless searching)
+                // - If Desktop: Open by default
+                let isCollapsed = false;
+                if (!filterText && isMobile) isCollapsed = true;
+                
+                if (isCollapsed) {
+                    gridWrapper.classList.add('hidden');
+                } else {
+                    header.querySelector('.fa-chevron-down').classList.add('rotate-180');
+                }
+                
+                header.addEventListener('click', () => {
+                    gridWrapper.classList.toggle('hidden');
+                    header.querySelector('.fa-chevron-down').classList.toggle('rotate-180');
+                });
+
                 const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-1 gap-2 pt-2';
+                // Use flex-wrap everywhere (chips)
+                grid.className = 'flex flex-wrap gap-2 pt-2';
+                
                 provinces.forEach(([name, data]) => {
                     const item = document.createElement('div');
-                    item.className = 'flex justify-between items-center p-3 rounded-lg bg-black/20 text-sm cursor-pointer border border-transparent hover:border-white/10 list-item-sync';
+                    // Chip Style
+                    item.className = 'flex items-center cursor-pointer border border-transparent hover:border-white/10 list-item-sync px-3 py-1.5 rounded-full bg-white/10 text-xs text-white';
                     item.setAttribute('data-list-prov', name);
-                    item.innerHTML = `<span class="text-white/90 font-medium">${name}</span><span class="text-xs text-text-secondary">${data.date !== '-' ? data.date : ''}</span>`;
+                    // Just name, no date in chips
+                    item.innerHTML = `<span class="font-medium">${name}</span>`;
+                    
                     item.addEventListener('mouseenter', () => document.querySelector(`.province[data-province="${name}"]`)?.classList.add('highlight-group'));
                     item.addEventListener('mouseleave', () => document.querySelector(`.province[data-province="${name}"]`)?.classList.remove('highlight-group'));
                     grid.appendChild(item);
                 });
                 gridWrapper.appendChild(grid);
-                container.appendChild(gridWrapper);
-                listContainer.appendChild(container);
+                groupContainer.appendChild(gridWrapper);
+                listContainer.appendChild(groupContainer);
             });
         }
 
@@ -713,9 +872,7 @@
                 if (!dotsByDate[ds]) dotsByDate[ds] = [];
                 dotsByDate[ds].push(d);
             });
-            document.querySelectorAll('[data-list-prov]').forEach(el => {
-                if (provinceData[el.getAttribute('data-list-prov')]?.status !== 'partial') el.classList.add('list-item-hidden');
-            });
+            
             let delay = 0;
             orderedDates.forEach(ds => {
                 setTimeout(() => {
@@ -723,9 +880,10 @@
                         item.el.classList.add('animating-flip');
                         setTimeout(() => item.el.classList.add(item.data.status), 150);
                         setTimeout(() => item.el.classList.remove('animating-flip'), 300);
+                        
+                        // Optional: Highlight list item if visible
                         const li = document.querySelector(`[data-list-prov="${item.name}"]`);
-                        if (li) {
-                            li.classList.remove('list-item-hidden');
+                        if (li && li.offsetParent !== null) { // Check visibility
                             li.classList.add('list-item-highlight');
                             setTimeout(() => li.classList.remove('list-item-highlight'), 400);
                         }
@@ -736,7 +894,6 @@
         }
         function replayMapAnimation() { playMapSequence(); }
 
-        renderList();
         document.getElementById('province-search')?.addEventListener('input', (e) => renderList(e.target.value.trim()));
     </script>
 </body>
