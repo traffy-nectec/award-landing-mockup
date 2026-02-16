@@ -246,6 +246,7 @@
     <div id="dynamic-tooltip"></div>
 
     <!-- Main Content Wrapper -->
+    <!-- Reduced Top Padding for Mobile (pt-16) -->
     <div class="pt-16 md:pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto">
         
         <!-- Hero Section -->
@@ -304,9 +305,7 @@
 
         <!-- Thailand Map & List (Moved UP) -->
         <section id="map" class="py-6 md:py-12 bg-dark-surface rounded-3xl px-4 md:px-8 mb-16 border border-white/5 reveal">
-            <!-- Vertical Stack on Mobile, Horizontal on Desktop -->
             <div class="flex flex-col lg:flex-row gap-8">
-                
                 <!-- Left/Top: Map + Legend -->
                 <div class="lg:w-1/2 flex flex-col">
                     <div class="mb-4 relative flex justify-between items-center">
@@ -314,11 +313,10 @@
                         <button onclick="replayMapAnimation()" class="text-xs bg-white/10 hover:bg-blue-500 hover:text-white text-white px-3 py-1.5 rounded-full transition flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> รีเซ็ต</button>
                     </div>
                     
-                    <!-- Map Container -->
                     <div class="map-wrapper rounded-2xl overflow-hidden border border-white/5 bg-black/30 w-full" id="map-container">
                         <svg id="thailand-svg" width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
                              <g transform="translate(-105, 30) scale(14)" class="map-group">
-                                <!-- SVG Paths -->
+                                <!-- SVG Paths (No change) -->
                                 <g id="Chiang_Rai" class="province"><title>เชียงราย (Chiang Rai)</title><circle cx="16" cy="2"/><circle cx="17" cy="2"/><circle cx="17" cy="3"/><circle cx="18" cy="3"/></g>
                                 <g id="Chiang_Mai" class="province"><title>เชียงใหม่ (Chiang Mai)</title><circle cx="13" cy="3"/><circle cx="14" cy="3"/><circle cx="15" cy="3"/><circle cx="13" cy="4"/><circle cx="14" cy="4"/><circle cx="15" cy="4"/><circle cx="13" cy="5"/><circle cx="14" cy="5"/></g>
                                 <g id="Mae_Hong_Son" class="province"><title>แม่ฮ่องสอน (Mae Hong Son)</title><circle cx="11" cy="4"/><circle cx="12" cy="4"/><circle cx="11" cy="5"/><circle cx="12" cy="5"/><circle cx="11" cy="6"/><circle cx="12" cy="6"/></g>
@@ -434,7 +432,7 @@
                     <div class="flex flex-col items-end gap-3 w-full md:w-auto">
                         <!-- Legend -->
                         <div class="flex items-center gap-2 text-[10px] text-text-secondary font-mono mt-1">
-                            <span>น้อย</span>
+                            <span>0</span>
                             <div class="flex gap-1">
                                 <div class="w-3 h-3 rounded-[2px] level-0"></div>
                                 <div class="w-3 h-3 rounded-[2px] level-1"></div>
@@ -442,52 +440,42 @@
                                 <div class="w-3 h-3 rounded-[2px] level-3"></div>
                                 <div class="w-3 h-3 rounded-[2px] level-4"></div>
                             </div>
-                            <span>มาก</span>
+                            <span>400+</span>
                         </div>
                     </div>
                 </div>
                 
                 <!-- 3 Month Calendar Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Month 1 -->
+                    <!-- Month 1: Dec 2025 -->
                     <div id="month-wrapper-0">
                         <div class="text-white text-sm font-bold mb-3 flex justify-between">
                             <span id="month-title-0">ธันวาคม 2568</span>
                         </div>
-                        <!-- Weekday Headers -->
-                        <div class="grid grid-cols-7 gap-1 mb-2">
-                            <div class="calendar-day-header">อา</div><div class="calendar-day-header">จ</div>
-                            <div class="calendar-day-header">อ</div><div class="calendar-day-header">พ</div>
-                            <div class="calendar-day-header">พฤ</div><div class="calendar-day-header">ศ</div>
-                            <div class="calendar-day-header">ส</div>
+                        <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] text-text-secondary font-bold">
+                            <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
                         </div>
                         <div id="calendar-month-0" class="calendar-month-grid"></div>
                     </div>
 
-                    <!-- Month 2 -->
+                    <!-- Month 2: Jan 2026 -->
                     <div id="month-wrapper-1">
                         <div class="text-white text-sm font-bold mb-3 flex justify-between">
                             <span id="month-title-1">มกราคม 2569</span>
                         </div>
-                        <div class="grid grid-cols-7 gap-1 mb-2">
-                            <div class="calendar-day-header">อา</div><div class="calendar-day-header">จ</div>
-                            <div class="calendar-day-header">อ</div><div class="calendar-day-header">พ</div>
-                            <div class="calendar-day-header">พฤ</div><div class="calendar-day-header">ศ</div>
-                            <div class="calendar-day-header">ส</div>
+                        <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] text-text-secondary font-bold">
+                            <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
                         </div>
                         <div id="calendar-month-1" class="calendar-month-grid"></div>
                     </div>
 
-                    <!-- Month 3 -->
+                    <!-- Month 3: Feb 2026 -->
                     <div id="month-wrapper-2">
                         <div class="text-white text-sm font-bold mb-3 flex justify-between">
                             <span id="month-title-2">กุมภาพันธ์ 2569</span>
                         </div>
-                        <div class="grid grid-cols-7 gap-1 mb-2">
-                            <div class="calendar-day-header">อา</div><div class="calendar-day-header">จ</div>
-                            <div class="calendar-day-header">อ</div><div class="calendar-day-header">พ</div>
-                            <div class="calendar-day-header">พฤ</div><div class="calendar-day-header">ศ</div>
-                            <div class="calendar-day-header">ส</div>
+                        <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] text-text-secondary font-bold">
+                            <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
                         </div>
                         <div id="calendar-month-2" class="calendar-month-grid"></div>
                     </div>
@@ -534,20 +522,20 @@
         };
 
         const activities = [
-            "หน่วยงาน กทม. ได้รับแจ้งเรื่องประเภท: ทางเท้าชำรุด",
-            "หน่วยงาน เทศบาลนครนนทบุรี ปรับสถานะเรื่องประเภท: ขยะอุดตัน เป็น แก้ไขเสร็จสิ้น",
-            "หน่วยงาน อบจ.ชลบุรี เชิญหน่วยงาน การไฟฟ้าฯ ร่วมแก้ไขเรื่องประเภท: สายไฟรกรุงรัง",
-            "หน่วยงาน สน.ทองหล่อ รับแจ้งเรื่องประเภท: จอดรถกีดขวาง",
-            "หน่วยงาน เทศบาลเมืองภูเก็ต รับเรื่องแจ้งประเภท: ฝาท่อระบายน้ำหาย",
-            "หน่วยงาน กรมทางหลวง รับแจ้งเรื่องประเภท: ไฟส่องสว่างดับ"
+            "หน่วยงาน <span class='text-accent'>กทม.</span> <span class='text-yellow-400'>ได้รับแจ้ง</span> เรื่อง: ทางเท้าชำรุด",
+            "หน่วยงาน <span class='text-accent'>เทศบาลนครนนทบุรี</span> <span class='text-success'>แก้ไขเสร็จสิ้น</span> เรื่อง: ขยะอุดตัน",
+            "หน่วยงาน <span class='text-accent'>อบจ.ชลบุรี</span> <span class='text-blue-400'>เชิญหน่วยงานร่วม</span> เรื่อง: สายไฟรกรุงรัง",
+            "หน่วยงาน <span class='text-accent'>สน.ทองหล่อ</span> <span class='text-yellow-400'>รับแจ้ง</span> เรื่อง: จอดรถกีดขวาง",
+            "หน่วยงาน <span class='text-accent'>เทศบาลเมืองภูเก็ต</span> <span class='text-yellow-400'>รับแจ้ง</span> เรื่อง: ฝาท่อระบายน้ำหาย",
+            "หน่วยงาน <span class='text-accent'>กรมทางหลวง</span> <span class='text-yellow-400'>รับแจ้ง</span> เรื่อง: ไฟส่องสว่างดับ"
         ];
         
         const feedback = [
-            { name: "คุณวิภา", stars: 5, msg: "แจ้งเรื่องไปแป๊บเดียวเจ้าหน้าที่มาเลยค่ะ ประทับใจมาก" },
-            { name: "สมชาย", stars: 4, msg: "ระบบใช้ง่ายดีครับ มีคนคอยตอบตลอด" },
-            { name: "สายใจ", stars: 5, msg: "เห็นความเปลี่ยนแปลงในซอยเลยค่ะ สะอาดขึ้นเยอะ" },
-            { name: "คุณเปิ้ล", stars: 5, msg: "ไม่คิดว่าจะไวขนาดนี้ ขอบคุณ Traffy Fondue มากค่ะ" },
-            { name: "K.Winai", stars: 4, msg: "ติดตามสถานะได้ตลอด โปร่งใสดีมากครับ" }
+            { type: "ความสะอาด", title: "ขยะล้นถังหน้าตลาด", msg: "แจ้งปุ๊บมาเก็บปั๊บ ไวมากค่ะ" },
+            { type: "ทางเท้า", title: "อิฐตัวหนอนกระดก", msg: "ซ่อมเสร็จแล้ว เดินสะดวกขึ้นเยอะครับ" },
+            { type: "ไฟฟ้า", title: "ไฟกิ่งดับทั้งซอย", msg: "สว่างแล้ว อุ่นใจขึ้นมาก ขอบคุณครับ" },
+            { type: "จราจร", title: "รถจอดขวางทางเข้าออก", msg: "เจ้าหน้าที่มาจัดการให้เร็วมาก" },
+            { type: "ความปลอดภัย", title: "ฝาท่อชำรุดอันตราย", msg: "แก้ไขเรียบร้อย ปลอดภัยแล้วค่ะ" }
         ];
 
         // --- UTILS ---
@@ -655,8 +643,7 @@
                 day.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
                 
                 container.appendChild(day);
-                // Staggered animation
-                setTimeout(() => day.classList.add('show'), i * 15);
+                setTimeout(() => day.classList.add('show'), i * 10);
             }
         }
 
@@ -674,24 +661,32 @@
         function initFeeds() {
             for(let i=0; i<4; i++) {
                 const act = activities[i % activities.length];
-                pushFeed('activity-feed', `<span class="text-accent font-bold"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span> - ${act}`);
+                pushFeed('activity-feed', `<span class="text-xs text-text-secondary"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span><br>${act}`);
                 
                 const fb = feedback[i % feedback.length];
-                let starHtml = "";
-                for(let j=0; j<fb.stars; j++) starHtml += '<i class="fa-solid fa-star text-yellow-500 mr-0.5"></i>';
-                pushFeed('testimonial-feed', `<div class="font-bold text-white mb-1">${fb.name} ${starHtml}</div><div class="italic text-text-secondary">"${fb.msg}"</div>`);
+                pushFeed('testimonial-feed', `
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-accent">${fb.type}</span>
+                        <span class="text-xs text-text-secondary truncate ml-2">${fb.title}</span>
+                    </div>
+                    <div class="italic text-white/80">"${fb.msg}"</div>
+                `);
             }
         }
 
         setInterval(() => {
             const act = activities[Math.floor(Math.random() * activities.length)];
-            pushFeed('activity-feed', `<span class="text-accent font-bold"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span> - ${act}`);
+            pushFeed('activity-feed', `<span class="text-xs text-text-secondary"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span><br>${act}`);
             
             if(Math.random() > 0.6) {
                 const fb = feedback[Math.floor(Math.random() * feedback.length)];
-                let starHtml = "";
-                for(let j=0; j<fb.stars; j++) starHtml += '<i class="fa-solid fa-star text-yellow-500 mr-0.5"></i>';
-                pushFeed('testimonial-feed', `<div class="font-bold text-white mb-1">${fb.name} ${starHtml}</div><div class="italic text-text-secondary">"${fb.msg}"</div>`);
+                pushFeed('testimonial-feed', `
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-accent">${fb.type}</span>
+                        <span class="text-xs text-text-secondary truncate ml-2">${fb.title}</span>
+                    </div>
+                    <div class="italic text-white/80">"${fb.msg}"</div>
+                `);
             }
         }, 3500);
 
@@ -708,7 +703,8 @@
         }
 
         const mapGroups = document.querySelectorAll('.province');
-
+        // REMOVED DUPLICATE DECLARATION OF DOTS HERE
+        
         mapGroups.forEach(group => {
             let thaiName = group.querySelector('title')?.textContent.split(' ')[0] || "";
             if (aliasMap[thaiName]) thaiName = aliasMap[thaiName];
