@@ -64,12 +64,8 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
+        /* SHOW IMMEDIATELY (No Scroll Reveal) */
         .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .reveal.active {
             opacity: 1;
             transform: translateY(0);
         }
@@ -113,55 +109,54 @@
         }
 
         /* --- HEATMAP STYLES --- */
-        .heatmap-grid {
+        .calendar-month-grid {
             display: grid;
-            grid-template-rows: repeat(7, 1fr);
-            grid-auto-flow: column;
-            grid-auto-columns: min-content;
-            gap: 3px;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
         }
-        .heatmap-day {
-            width: 11px;
-            height: 11px;
-            border-radius: 2px;
-            background-color: #1c1c1e;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            opacity: 0;
-            transform: scale(0);
+        .calendar-day-header {
+            text-align: center;
+            font-size: 10px;
+            color: #a1a1a6;
+            margin-bottom: 4px;
         }
-        .heatmap-day.show { 
-            opacity: 1; 
-            transform: scale(1);
-        }
-        .heatmap-day:hover { transform: scale(1.5); z-index: 10; outline: 1px solid white; }
-        
-        .level-0 { background-color: #1c1c1e; }
-        .level-1 { background-color: #4a3728; }
-        .level-2 { background-color: #78350f; }
-        .level-3 { background-color: #991b1b; }
-        .level-4 { background-color: #7f1d1d; }
-
-        /* Mobile Monthly Heatmap */
-        .heatmap-monthly-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-        }
-        .heatmap-month {
-            height: 40px;
+        .calendar-day {
+            aspect-ratio: 1;
             border-radius: 4px;
-            background-color: #1c1c1e;
+            background-color: #262626; /* Default empty color */
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
-            color: #fff;
-            opacity: 0;
-            transform: scale(0.9);
-            transition: all 0.3s ease;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
         }
-        .heatmap-month.show { opacity: 1; transform: scale(1); }
+        .calendar-day:hover {
+            transform: scale(1.2);
+            z-index: 10;
+            border: 1px solid white;
+        }
+        .calendar-day.empty {
+            background-color: transparent;
+            cursor: default;
+        }
+        .calendar-day.empty:hover {
+            transform: none;
+            border: none;
+        }
+        .calendar-day.show { 
+            opacity: 1; 
+            transform: scale(1);
+        }
+        
+        /* Heatmap Levels */
+        .level-0 { background-color: #262626; color: #666; }
+        .level-1 { background-color: #4a3728; color: #fff; }
+        .level-2 { background-color: #78350f; color: #fff; }
+        .level-3 { background-color: #991b1b; color: #fff; }
+        .level-4 { background-color: #ef4444; color: #fff; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
 
         /* --- LIVE FEED STYLES --- */
         .feed-container {
@@ -240,8 +235,8 @@
             </div>
             <div class="hidden md:flex space-x-8 text-sm font-medium text-text-secondary">
                 <a href="#stats" class="text-white hover:text-accent transition">ภาพรวม</a>
-                <a href="#pulse" class="hover:text-white transition">จังหวะเมือง</a>
                 <a href="#map" class="hover:text-white transition">พื้นที่</a>
+                <a href="#pulse" class="hover:text-white transition">จังหวะเมือง</a>
                 <a href="#live" class="hover:text-white transition">Live Feed</a>
             </div>
             <div class="w-10"></div>
@@ -251,11 +246,10 @@
     <div id="dynamic-tooltip"></div>
 
     <!-- Main Content Wrapper -->
-    <!-- Reduced Top Padding for Mobile (pt-16) -->
     <div class="pt-16 md:pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto">
         
         <!-- Hero Section -->
-        <div class="flex flex-col xl:flex-row gap-6 md:gap-10 mb-8 md:mb-12 reveal active">
+        <div class="flex flex-col xl:flex-row gap-6 md:gap-10 mb-8 md:mb-12 reveal">
             <div class="xl:w-1/3 flex flex-col justify-center text-center xl:text-left">
                 <div class="inline-flex items-center justify-center xl:justify-start gap-2 mb-2 md:mb-4">
                     <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
@@ -308,69 +302,7 @@
             </div>
         </div>
 
-        <!-- Calendar Heatmap Section -->
-        <section id="pulse" class="mb-16 reveal">
-            <div class="bento-card rounded-3xl p-6 md:p-8 bg-dark-surface border border-white/5 overflow-hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div>
-                        <h3 class="text-xl font-bold text-white">จังหวะชีวิตของเมือง (City Pulse)</h3>
-                        <p class="text-text-secondary text-sm">ความหนาแน่นของการแจ้งเหตุรายวันย้อนหลัง</p>
-                    </div>
-                    
-                    <div class="flex flex-col items-end gap-3 w-full md:w-auto">
-                        <div class="flex bg-black/40 p-1 rounded-xl border border-white/5 w-full md:w-auto justify-between md:justify-start">
-                            <button onclick="updateHeatmapYear(2023)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white flex-1 md:flex-none" id="btn-2023">2023</button>
-                            <button onclick="updateHeatmapYear(2024)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white flex-1 md:flex-none" id="btn-2024">2024</button>
-                            <button onclick="updateHeatmapYear(2025)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-fondue text-white flex-1 md:flex-none" id="btn-2025">2025</button>
-                            <button onclick="updateHeatmapYear(2026)" class="year-btn px-3 md:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-text-secondary hover:text-white flex-1 md:flex-none" id="btn-2026">2026</button>
-                        </div>
-                         <!-- Legend (Visible on Desktop) -->
-                         <div class="hidden md:flex items-center gap-3 text-[10px] text-text-secondary font-mono mt-2">
-                            <div class="flex flex-col items-center"><span>0</span><div class="w-3 h-3 rounded-[2px] level-0 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>100</span><div class="w-3 h-3 rounded-[2px] level-1 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>200</span><div class="w-3 h-3 rounded-[2px] level-2 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>300</span><div class="w-3 h-3 rounded-[2px] level-3 mt-1"></div></div>
-                            <div class="flex flex-col items-center"><span>400+</span><div class="w-3 h-3 rounded-[2px] level-4 mt-1"></div></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Desktop Heatmap (Daily) -->
-                <div class="hidden md:block overflow-x-auto no-scrollbar pb-2">
-                    <div class="min-w-[850px]">
-                        <div class="flex gap-4">
-                            <div class="flex flex-col justify-between text-[10px] text-text-secondary pt-6 pb-2 h-28 font-bold">
-                                <span>อา.</span><span>อ.</span><span>พฤ.</span><span>ส.</span>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex justify-between text-[10px] text-text-secondary mb-3 pr-4 font-bold tracking-widest uppercase opacity-50">
-                                    <span>ม.ค.</span><span>ก.พ.</span><span>มี.ค.</span><span>เม.ย.</span><span>พ.ค.</span><span>มิ.ย.</span><span>ก.ค.</span><span>ส.ค.</span><span>ก.ย.</span><span>ต.ค.</span><span>พ.ย.</span><span>ธ.ค.</span>
-                                </div>
-                                <div id="calendar-heatmap" class="heatmap-grid"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mobile Heatmap (Monthly Calendar) -->
-                <div class="md:hidden">
-                    <div class="flex justify-between items-center mb-4 bg-black/20 p-2 rounded-lg">
-                        <button id="mobile-prev-month" class="text-white hover:text-accent p-2"><i class="fa-solid fa-chevron-left"></i></button>
-                        <span id="mobile-current-month" class="text-sm font-bold text-white">มกราคม 2026</span>
-                        <button id="mobile-next-month" class="text-white hover:text-accent p-2"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                    <!-- Weekday Headers -->
-                    <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] text-text-secondary font-bold">
-                        <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
-                    </div>
-                    <div id="monthly-heatmap" class="heatmap-monthly-grid">
-                        <!-- Filled by JS -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Thailand Map & List (Updated Layout) -->
+        <!-- Thailand Map & List (Moved UP) -->
         <section id="map" class="py-6 md:py-12 bg-dark-surface rounded-3xl px-4 md:px-8 mb-16 border border-white/5 reveal">
             <!-- Vertical Stack on Mobile, Horizontal on Desktop -->
             <div class="flex flex-col lg:flex-row gap-8">
@@ -490,6 +422,79 @@
             </div>
         </section>
 
+        <!-- City Pulse: Calendar View (3 Months) -->
+        <section id="pulse" class="mb-16 reveal">
+            <div class="bento-card rounded-3xl p-6 md:p-8 bg-dark-surface border border-white/5 overflow-hidden">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">จังหวะชีวิตของเมือง (City Pulse)</h3>
+                        <p class="text-text-secondary text-sm">ความหนาแน่นของการแจ้งเหตุ 3 เดือนล่าสุด</p>
+                    </div>
+                    
+                    <div class="flex flex-col items-end gap-3 w-full md:w-auto">
+                        <!-- Legend -->
+                        <div class="flex items-center gap-2 text-[10px] text-text-secondary font-mono mt-1">
+                            <span>น้อย</span>
+                            <div class="flex gap-1">
+                                <div class="w-3 h-3 rounded-[2px] level-0"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-1"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-2"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-3"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-4"></div>
+                            </div>
+                            <span>มาก</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 3 Month Calendar Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Month 1 -->
+                    <div id="month-wrapper-0">
+                        <div class="text-white text-sm font-bold mb-3 flex justify-between">
+                            <span id="month-title-0">ธันวาคม 2568</span>
+                        </div>
+                        <!-- Weekday Headers -->
+                        <div class="grid grid-cols-7 gap-1 mb-2">
+                            <div class="calendar-day-header">อา</div><div class="calendar-day-header">จ</div>
+                            <div class="calendar-day-header">อ</div><div class="calendar-day-header">พ</div>
+                            <div class="calendar-day-header">พฤ</div><div class="calendar-day-header">ศ</div>
+                            <div class="calendar-day-header">ส</div>
+                        </div>
+                        <div id="calendar-month-0" class="calendar-month-grid"></div>
+                    </div>
+
+                    <!-- Month 2 -->
+                    <div id="month-wrapper-1">
+                        <div class="text-white text-sm font-bold mb-3 flex justify-between">
+                            <span id="month-title-1">มกราคม 2569</span>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1 mb-2">
+                            <div class="calendar-day-header">อา</div><div class="calendar-day-header">จ</div>
+                            <div class="calendar-day-header">อ</div><div class="calendar-day-header">พ</div>
+                            <div class="calendar-day-header">พฤ</div><div class="calendar-day-header">ศ</div>
+                            <div class="calendar-day-header">ส</div>
+                        </div>
+                        <div id="calendar-month-1" class="calendar-month-grid"></div>
+                    </div>
+
+                    <!-- Month 3 -->
+                    <div id="month-wrapper-2">
+                        <div class="text-white text-sm font-bold mb-3 flex justify-between">
+                            <span id="month-title-2">กุมภาพันธ์ 2569</span>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1 mb-2">
+                            <div class="calendar-day-header">อา</div><div class="calendar-day-header">จ</div>
+                            <div class="calendar-day-header">อ</div><div class="calendar-day-header">พ</div>
+                            <div class="calendar-day-header">พฤ</div><div class="calendar-day-header">ศ</div>
+                            <div class="calendar-day-header">ส</div>
+                        </div>
+                        <div id="calendar-month-2" class="calendar-month-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- LIVE FEED & TESTIMONIALS (Moved below map) -->
         <section id="live" class="mb-16 reveal grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bento-card rounded-3xl p-8 bg-dark-surface border border-white/5">
@@ -528,6 +533,23 @@
             "เพชรบุรี": { date: "-", status: "partial" }, "ประจวบคีรีขันธ์": { date: "-", status: "partial" }, "ชุมพร": { date: "-", status: "partial" }, "ระนอง": { date: "20 มี.ค. 68", status: "completed" }, "สุราษฎร์ธานี": { date: "-", status: "partial" }, "พังงา": { date: "-", status: "partial" }, "ภูเก็ต": { date: "19-20 ธ.ค. 65", status: "completed" }, "กระบี่": { date: "-", status: "partial" }, "นครศรีธรรมราช": { date: "-", status: "partial" }, "ตรัง": { date: "22 ก.ย. 66", status: "completed" }, "พัทลุง": { date: "-", status: "partial" }, "สตูล": { date: "-", status: "partial" }, "สงขลา": { date: "-", status: "partial" }, "ปัตตานี": { date: "-", status: "partial" }, "ยะลา": { date: "-", status: "partial" }, "นราธิวาส": { date: "9 มี.ค 69", status: "pending" }
         };
 
+        const activities = [
+            "หน่วยงาน กทม. ได้รับแจ้งเรื่องประเภท: ทางเท้าชำรุด",
+            "หน่วยงาน เทศบาลนครนนทบุรี ปรับสถานะเรื่องประเภท: ขยะอุดตัน เป็น แก้ไขเสร็จสิ้น",
+            "หน่วยงาน อบจ.ชลบุรี เชิญหน่วยงาน การไฟฟ้าฯ ร่วมแก้ไขเรื่องประเภท: สายไฟรกรุงรัง",
+            "หน่วยงาน สน.ทองหล่อ รับแจ้งเรื่องประเภท: จอดรถกีดขวาง",
+            "หน่วยงาน เทศบาลเมืองภูเก็ต รับเรื่องแจ้งประเภท: ฝาท่อระบายน้ำหาย",
+            "หน่วยงาน กรมทางหลวง รับแจ้งเรื่องประเภท: ไฟส่องสว่างดับ"
+        ];
+        
+        const feedback = [
+            { name: "คุณวิภา", stars: 5, msg: "แจ้งเรื่องไปแป๊บเดียวเจ้าหน้าที่มาเลยค่ะ ประทับใจมาก" },
+            { name: "สมชาย", stars: 4, msg: "ระบบใช้ง่ายดีครับ มีคนคอยตอบตลอด" },
+            { name: "สายใจ", stars: 5, msg: "เห็นความเปลี่ยนแปลงในซอยเลยค่ะ สะอาดขึ้นเยอะ" },
+            { name: "คุณเปิ้ล", stars: 5, msg: "ไม่คิดว่าจะไวขนาดนี้ ขอบคุณ Traffy Fondue มากค่ะ" },
+            { name: "K.Winai", stars: 4, msg: "ติดตามสถานะได้ตลอด โปร่งใสดีมากครับ" }
+        ];
+
         // --- UTILS ---
         function parseThaiDate(dateStr) {
             if (!dateStr || dateStr === "-" || dateStr.includes("ประสาน")) return new Date(9999, 11, 31);
@@ -556,75 +578,75 @@
 
         // Initialize immediately
         window.addEventListener('DOMContentLoaded', () => {
-             startCounters(document); 
-             generateHeatmap(2025);
+             // FORCE START COUNTERS
+             startCounters(document.getElementById('stats')); 
+
+             // 3 Months (Dec 25, Jan 26, Feb 26)
+             renderMonth(2025, 11, 'calendar-month-0'); // Dec 2025
+             renderMonth(2026, 0, 'calendar-month-1');  // Jan 2026
+             renderMonth(2026, 1, 'calendar-month-2');  // Feb 2026
+
              playMapSequence();
              renderList();
              initFeeds();
              updateLegendCounts();
-             
-             // Initial Check for viewport
-             if(window.innerWidth < 768) {
-                 renderMobileHeatmap(currentMobileDate);
-             }
-        });
-
-        // Scroll Reveal
-        window.addEventListener("scroll", () => {
-            document.querySelectorAll(".reveal").forEach(el => {
-                if (el.getBoundingClientRect().top < window.innerHeight - 50) {
-                    el.classList.add("active");
-                }
-            });
         });
 
         function startCounters(section) {
-             const scope = section || document; 
-            const counters = scope.querySelectorAll('.counter');
+            if (!section) return;
+            const counters = section.querySelectorAll('.counter');
             counters.forEach(counter => {
                 let target = parseInt(counter.getAttribute('data-target'));
+                if (isNaN(target)) return;
+                
                 const startTime = performance.now();
+                const duration = 2000;
+
                 function updateCount(currentTime) {
                     const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / 2000, 1);
-                    const current = target * (1 - Math.pow(1 - progress, 4));
+                    const progress = Math.min(elapsed / duration, 1);
+                    const ease = 1 - Math.pow(1 - progress, 4); 
+                    const current = target * ease;
                     counter.innerText = Math.floor(current).toLocaleString();
+
                     if (progress < 1) requestAnimationFrame(updateCount);
                     else counter.innerText = target.toLocaleString();
                 }
                 requestAnimationFrame(updateCount);
             });
-             const circle = document.querySelector('#progress-circle');
+             const circle = section.querySelector('#progress-circle');
             if (circle) {
-                // Ensure the circle stroke animation plays
                 setTimeout(() => { circle.style.strokeDashoffset = '65'; }, 100);
             }
         }
 
-        // --- CALENDAR HEATMAP ---
-        function generateHeatmap(year) {
-            const container = document.getElementById('calendar-heatmap');
-            if (!container) return; // Desktop container
+        // --- CALENDAR HEATMAP (3 Months View) ---
+        function renderMonth(year, monthIndex, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
             container.innerHTML = "";
-            const startDate = new Date(year, 0, 1);
+            
+            const startDate = new Date(year, monthIndex, 1);
+            const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
             const startDayOfWeek = startDate.getDay(); // 0 (Sun)
             
-            // Render padding for first week based on Sunday start
+            // Padding
             for (let p = 0; p < startDayOfWeek; p++) {
                 const pad = document.createElement('div');
-                pad.className = 'w-[11px] h-[11px] opacity-0';
+                pad.className = 'w-[14px] h-[14px] opacity-0'; 
                 container.appendChild(pad);
             }
-
-            const totalDays = 365 + (year % 4 === 0 ? 1 : 0); 
-            for(let i=0; i<totalDays; i++) {
+            
+            for(let i=1; i<=daysInMonth; i++) {
                 const day = document.createElement('div');
                 const level = Math.floor(Math.random() * 5); 
                 const count = level === 0 ? 0 : level * 100 + Math.floor(Math.random() * 99);
-                day.className = `heatmap-day level-${level}`;
+                day.className = `calendar-day level-${level}`;
+                day.innerText = i; // Day number
+                day.classList.add('text-[8px]', 'text-white/80');
                 
                 day.addEventListener('mousemove', (e) => {
-                    const d = new Date(year, 0, i + 1);
+                    const d = new Date(year, monthIndex, i);
                     dynamicTooltip.style.opacity = 1;
                     dynamicTooltip.innerHTML = `<strong>${d.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'numeric'})}</strong><br><span class="text-xs font-mono">เรื่องแจ้ง: ${count.toLocaleString()}</span>`;
                     dynamicTooltip.style.left = e.pageX + 'px';
@@ -633,80 +655,10 @@
                 day.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
                 
                 container.appendChild(day);
-                setTimeout(() => day.classList.add('show'), i * 2);
+                // Staggered animation
+                setTimeout(() => day.classList.add('show'), i * 15);
             }
         }
-
-        function updateHeatmapYear(year) {
-            document.querySelectorAll('.year-btn').forEach(btn => {
-                btn.classList.remove('bg-fondue', 'text-white');
-                btn.classList.add('text-text-secondary');
-            });
-            document.getElementById(`btn-${year}`)?.classList.add('bg-fondue', 'text-white');
-            generateHeatmap(year);
-        }
-
-        // --- MOBILE MONTHLY HEATMAP ---
-        function renderMobileHeatmap(date) {
-            const container = document.getElementById('monthly-heatmap');
-            const label = document.getElementById('mobile-current-month');
-            if(!container) return;
-            
-            container.innerHTML = "";
-            label.innerText = date.toLocaleDateString('th-TH', {month:'long', year:'numeric'});
-            
-            const year = date.getFullYear();
-            const month = date.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const startDay = new Date(year, month, 1).getDay();
-
-            for(let i=0; i<startDay; i++) {
-                 const pad = document.createElement('div');
-                 container.appendChild(pad);
-            }
-
-            for(let i=1; i<=daysInMonth; i++) {
-                const day = document.createElement('div');
-                const level = Math.floor(Math.random() * 5);
-                const count = level * 50 + Math.floor(Math.random() * 20);
-                day.className = `heatmap-month level-${level}`;
-                day.innerText = i; // Show day number
-                day.classList.add('flex', 'items-center', 'justify-center', 'text-[10px]', 'text-white/70');
-                
-                day.addEventListener('click', () => {
-                     alert(`วันที่ ${i} ${label.innerText}: แจ้ง ${count} เรื่อง`);
-                });
-                container.appendChild(day);
-                setTimeout(() => day.classList.add('show'), i * 20);
-            }
-        }
-
-        document.getElementById('mobile-prev-month').addEventListener('click', () => {
-            currentMobileDate.setMonth(currentMobileDate.getMonth() - 1);
-            renderMobileHeatmap(currentMobileDate);
-        });
-        document.getElementById('mobile-next-month').addEventListener('click', () => {
-            currentMobileDate.setMonth(currentMobileDate.getMonth() + 1);
-            renderMobileHeatmap(currentMobileDate);
-        });
-
-        // --- LIVE FEEDS ---
-        const activities = [
-            "หน่วยงาน กทม. ได้รับแจ้งเรื่องประเภท: ทางเท้าชำรุด",
-            "หน่วยงาน เทศบาลนครนนทบุรี ปรับสถานะเรื่องประเภท: ขยะอุดตัน เป็น แก้ไขเสร็จสิ้น",
-            "หน่วยงาน อบจ.ชลบุรี เชิญหน่วยงาน การไฟฟ้าฯ ร่วมแก้ไขเรื่องประเภท: สายไฟรกรุงรัง",
-            "หน่วยงาน สน.ทองหล่อ รับแจ้งเรื่องประเภท: จอดรถกีดขวาง",
-            "หน่วยงาน เทศบาลเมืองภูเก็ต รับเรื่องแจ้งประเภท: ฝาท่อระบายน้ำหาย",
-            "หน่วยงาน กรมทางหลวง รับแจ้งเรื่องประเภท: ไฟส่องสว่างดับ"
-        ];
-        
-        const feedback = [
-            { name: "คุณวิภา", stars: 5, msg: "แจ้งเรื่องไปแป๊บเดียวเจ้าหน้าที่มาเลยค่ะ ประทับใจมาก" },
-            { name: "สมชาย", stars: 4, msg: "ระบบใช้ง่ายดีครับ มีคนคอยตอบตลอด" },
-            { name: "สายใจ", stars: 5, msg: "เห็นความเปลี่ยนแปลงในซอยเลยค่ะ สะอาดขึ้นเยอะ" },
-            { name: "คุณเปิ้ล", stars: 5, msg: "ไม่คิดว่าจะไวขนาดนี้ ขอบคุณ Traffy Fondue มากค่ะ" },
-            { name: "K.Winai", stars: 4, msg: "ติดตามสถานะได้ตลอด โปร่งใสดีมากครับ" }
-        ];
 
         function pushFeed(containerId, content) {
             const container = document.getElementById(containerId);
@@ -730,7 +682,6 @@
                 pushFeed('testimonial-feed', `<div class="font-bold text-white mb-1">${fb.name} ${starHtml}</div><div class="italic text-text-secondary">"${fb.msg}"</div>`);
             }
         }
-        initFeeds();
 
         setInterval(() => {
             const act = activities[Math.floor(Math.random() * activities.length)];
@@ -757,8 +708,7 @@
         }
 
         const mapGroups = document.querySelectorAll('.province');
-        // REMOVED DUPLICATE DECLARATION OF DOTS HERE
-        
+
         mapGroups.forEach(group => {
             let thaiName = group.querySelector('title')?.textContent.split(' ')[0] || "";
             if (aliasMap[thaiName]) thaiName = aliasMap[thaiName];
