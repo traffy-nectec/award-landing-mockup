@@ -17,6 +17,11 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Leaflet CSS for OpenStreetMap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -36,7 +41,7 @@
                         success: '#34C759',
                         pending: '#FF9F0A',
                         partial: '#334155', 
-                        'h-0': '#1c1c1e',
+                        'h-0': '#262626',
                         'h-1': '#4a3728',
                         'h-2': '#78350f',
                         'h-3': '#991b1b',
@@ -59,12 +64,11 @@
         }
 
         .glass-nav {
-            background: rgba(28, 28, 30, 0.85);
+            background: rgba(28, 28, 30, 0.95);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* SHOW IMMEDIATELY (No Scroll Reveal) */
         .reveal {
             opacity: 1;
             transform: translateY(0);
@@ -91,6 +95,7 @@
             background: radial-gradient(circle at center, rgba(96, 165, 250, 0.05) 0%, rgba(0,0,0,0) 70%);
         }
         #thailand-svg { width: 100%; height: 100%; max-width: 400px; overflow: visible; }
+        
         .map-group { fill: #334155; }
         .province { cursor: pointer; transition: fill 0.3s ease; }
         .province circle { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); r: 0.4; }
@@ -100,12 +105,20 @@
         }
         .province.completed { fill: #34C759; }
         .province.pending { fill: #FF9F0A; }
-        .province.animating-flip circle { animation: dotPop 0.3s ease-in-out; transform-origin: center; transform-box: fill-box; }
+        .animating-flip circle { animation: dotPop 0.3s ease-in-out; transform-origin: center; transform-box: fill-box; }
 
         @keyframes dotPop {
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(0.2); opacity: 0.5; }
             100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- OSM LEAFLET MAP STYLES (DARK MODE) --- */
+        .leaflet-container {
+            background: transparent !important;
+        }
+        .leaflet-layer {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
 
         /* --- HEATMAP STYLES --- */
@@ -123,7 +136,7 @@
         .calendar-day {
             aspect-ratio: 1;
             border-radius: 4px;
-            background-color: #262626; /* Default empty color */
+            background-color: #262626; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -131,25 +144,11 @@
             color: rgba(255,255,255,0.8);
             cursor: pointer;
             transition: all 0.2s ease;
-            position: relative;
+            opacity: 1;
         }
-        .calendar-day:hover {
-            transform: scale(1.2);
-            z-index: 10;
-            border: 1px solid white;
-        }
-        .calendar-day.empty {
-            background-color: transparent;
-            cursor: default;
-        }
-        .calendar-day.empty:hover {
-            transform: none;
-            border: none;
-        }
-        .calendar-day.show { 
-            opacity: 1; 
-            transform: scale(1);
-        }
+        .calendar-day:hover { transform: scale(1.2); z-index: 10; border: 1px solid white; }
+        .calendar-day.empty { background-color: transparent; cursor: default; }
+        .calendar-day.empty:hover { transform: none; border: none; }
         
         /* Heatmap Levels */
         .level-0 { background-color: #262626; color: #666; }
@@ -160,7 +159,6 @@
 
         /* --- LIVE FEED STYLES --- */
         .feed-container {
-            height: 350px;
             overflow-y: auto;
             scrollbar-width: none;
         }
@@ -168,7 +166,7 @@
             animation: slideIn 0.5s ease-out forwards;
         }
         @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
+            from { transform: translateY(10px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
 
@@ -190,21 +188,6 @@
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Synchronized List Animations */
-        .list-item-sync {
-            opacity: 1;
-            transform: translateX(0);
-            transition: opacity 0.4s ease, transform 0.4s ease, background-color 0.3s ease;
-        }
-        .list-item-hidden {
-            opacity: 0.2;
-            transform: translateX(-10px);
-        }
-        .list-item-highlight {
-            background-color: rgba(96, 165, 250, 0.15) !important;
-            border-left: 3px solid #60a5fa !important;
-        }
-
         /* Map Legend Overlay */
         .map-legend-overlay {
             position: absolute;
@@ -218,211 +201,233 @@
             font-size: 10px;
             z-index: 20;
         }
+
+        /* Tab Transitions */
+        .tab-content {
+            display: none !important; 
+        }
+        .tab-content.active {
+            display: block !important;
+            animation: fadeIn 0.5s ease-out;
+        }
+        #tab-awards.active {
+            display: flex !important;
+        }
+        
+        /* Full screen overlay tab for Activity */
+        #tab-activity.active {
+            display: block !important;
+            position: fixed;
+            top: 64px; /* offset navbar */
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 40;
+            background-color: #050505;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-accent selection:text-white">
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed w-full z-50 transition-all duration-300">
-        <div class="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between">
+    <nav class="glass-nav fixed w-full z-50 transition-all duration-300 border-b border-white/10 h-16">
+        <div class="max-w-screen-xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
+            <!-- Logo & Brand -->
             <div class="flex items-center gap-3">
-                <!-- LOGO -->
-                <img src="traffy_logo.png" alt="Traffy Fondue" class="h-10 w-auto object-contain bg-white rounded-lg p-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                <div class="bg-fondue text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-lg hidden">
+                <img src="traffy_logo.png" alt="Traffy Fondue" class="h-8 md:h-10 w-auto object-contain bg-white rounded-lg p-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                <div class="bg-fondue text-white w-8 h-8 rounded-xl flex items-center justify-center shadow-lg hidden">
                     <i class="fa-solid fa-layer-group text-sm"></i>
                 </div>
-                <span class="font-bold text-lg tracking-tight text-white hidden md:block">Fondue Award</span>
+                <span class="font-bold text-lg tracking-tight text-white block">Fondue Award</span>
             </div>
-            <div class="hidden md:flex space-x-8 text-sm font-medium text-text-secondary">
-                <a href="#stats" class="text-white hover:text-accent transition">ภาพรวม</a>
-                <a href="#map" class="hover:text-white transition">พื้นที่</a>
-                <a href="#pulse" class="hover:text-white transition">จังหวะเมือง</a>
-                <a href="#live" class="hover:text-white transition">Live Feed</a>
+
+            <!-- Navigation Tabs -->
+            <div class="flex space-x-4 md:space-x-6 text-sm font-medium overflow-x-auto no-scrollbar h-full items-center">
+                <button onclick="switchTab('stats')" id="nav-stats" class="nav-link text-white border-b-2 border-accent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center">สถิติของระบบ</button>
+                <button onclick="switchTab('activity')" id="nav-activity" class="nav-link text-text-secondary border-b-2 border-transparent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center">กิจกรรมล่าสุด</button>
+                <button onclick="switchTab('awards')" id="nav-awards" class="nav-link text-text-secondary border-b-2 border-transparent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center">ประกาศรางวัล</button>
             </div>
-            <div class="w-10"></div>
         </div>
     </nav>
 
     <div id="dynamic-tooltip"></div>
 
     <!-- Main Content Wrapper -->
-    <!-- Reduced Top Padding for Mobile (pt-16) -->
-    <div class="pt-16 md:pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto">
+    <div class="pt-24 md:pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto">
         
-        <!-- Hero Section -->
-        <div class="flex flex-col xl:flex-row gap-6 md:gap-10 mb-8 md:mb-12 reveal">
-            <div class="xl:w-1/3 flex flex-col justify-center text-center xl:text-left">
-                <div class="inline-flex items-center justify-center xl:justify-start gap-2 mb-2 md:mb-4">
-                    <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-                    <span id="update-time" class="text-xs font-bold tracking-widest text-text-secondary uppercase">ข้อมูล ณ วันที่...</span>
-                </div>
-                <h1 class="text-3xl md:text-5xl font-bold leading-tight mb-3 md:mb-4 text-white">พลังข้อมูล<br><span class="text-fondue-accent">เปลี่ยนประเทศไทย</span></h1>
-                <p class="text-text-secondary text-sm md:text-lg mb-6 md:mb-8 font-light leading-relaxed hidden md:block">ติดตามสถิติการแก้ไขปัญหาจากทุกหน่วยงานรัฐทั่วประเทศ ผ่านระบบโปร่งใสและตรวจสอบได้</p>
-                <div class="hidden xl:flex gap-4">
-                     <button class="bg-fondue hover:bg-[#6b4a35] text-white px-8 py-3 rounded-full font-medium transition flex items-center gap-2 shadow-lg">
-                        ดูอันดับยอดเยี่ยม <i class="fa-solid fa-trophy text-xs"></i>
-                     </button>
-                </div>
-            </div>
-
-            <!-- Hero Stats Grid -->
-            <div class="xl:w-2/3" id="stats">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- Total Tickets -->
-                    <div class="bento-card md:col-span-2 rounded-3xl p-6 md:p-8 bg-fondue text-white shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[220px] md:min-h-[280px]">
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
-                        <div class="relative z-10">
-                            <h3 class="text-lg font-medium text-white/90 mb-4 md:mb-6">เรื่องแจ้งทั้งหมด</h3>
-                            <div class="flex items-baseline gap-2 mb-2">
-                                <span id="total-tickets-display" class="text-5xl md:text-7xl font-bold tracking-tight counter" data-target="1808598">0</span>
-                            </div>
-                            <p class="text-white/60 text-sm">เรื่องร้องเรียนสะสมทั่วประเทศ</p>
-                        </div>
-                        <div class="mt-4 md:mt-6 flex items-end gap-1 h-12 md:h-16 w-full opacity-40">
-                            <div class="w-full bg-white rounded-t-sm h-[30%]"></div><div class="w-full bg-white rounded-t-sm h-[45%]"></div><div class="w-full bg-white rounded-t-sm h-[40%]"></div><div class="w-full bg-white rounded-t-sm h-[60%]"></div><div class="w-full bg-white rounded-t-sm h-[55%]"></div><div class="w-full bg-white rounded-t-sm h-[75%]"></div><div class="w-full bg-white rounded-t-sm h-[65%]"></div><div class="w-full bg-white rounded-t-sm h-[85%]"></div><div class="w-full bg-white rounded-t-sm h-[90%]"></div><div class="w-full bg-white rounded-t-sm h-[100%]"></div>
-                        </div>
+        <!-- ============================================== -->
+        <!-- TAB 1: สถิติของระบบ (SYSTEM STATS)               -->
+        <!-- ============================================== -->
+        <div id="tab-stats" class="tab-content active">
+            
+            <!-- Hero Section -->
+            <div class="flex flex-col xl:flex-row gap-6 md:gap-10 mb-8 md:mb-12">
+                <div class="xl:w-1/3 flex flex-col justify-center text-center xl:text-left">
+                    <div class="inline-flex items-center justify-center xl:justify-start gap-2 mb-2 md:mb-4">
+                        <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                        <span id="update-time" class="text-xs font-bold tracking-widest text-text-secondary uppercase">ข้อมูล ณ วันที่...</span>
                     </div>
-                    <!-- Efficiency -->
-                    <div class="bento-card md:col-span-1 rounded-3xl p-6 bg-dark-surface flex flex-col items-center justify-center text-center relative min-h-[220px] md:min-h-[280px]">
-                        <div class="relative w-28 h-28 md:w-36 md:h-36 mb-4 md:mb-6">
-                            <svg class="w-full h-full transform -rotate-90">
-                                <circle cx="50%" cy="50%" r="45%" stroke="#2c2c2e" stroke-width="10" fill="transparent" />
-                                <circle id="progress-circle" cx="50%" cy="50%" r="45%" stroke="#34C759" stroke-width="10" fill="transparent" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" class="transition-all duration-[2000ms] ease-out" />
-                            </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                <div class="flex items-baseline">
-                                    <span class="text-3xl md:text-4xl font-bold text-white counter" data-target="77">0</span>
-                                    <span class="text-base md:text-lg font-bold text-success ml-0.5">%</span>
+                    <h1 class="text-3xl md:text-5xl font-bold leading-tight mb-3 md:mb-4 text-white">พลังข้อมูล<br><span class="text-fondue-accent">เปลี่ยนประเทศไทย</span></h1>
+                    <p class="text-text-secondary text-sm md:text-lg mb-6 md:mb-8 font-light leading-relaxed hidden md:block">ติดตามสถิติการแก้ไขปัญหาจากทุกหน่วยงานรัฐทั่วประเทศ ผ่านระบบโปร่งใสและตรวจสอบได้</p>
+                </div>
+
+                <!-- Hero Stats Grid -->
+                <div class="xl:w-2/3" id="stats-grid">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Total Tickets -->
+                        <div class="bento-card md:col-span-2 rounded-3xl p-6 md:p-8 bg-fondue text-white shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[180px] md:min-h-[220px]">
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
+                            <div class="relative z-10">
+                                <h3 class="text-lg font-medium text-white/90 mb-4 md:mb-6">เรื่องแจ้งทั้งหมด</h3>
+                                <div class="flex items-baseline gap-2 mb-2">
+                                    <span class="text-5xl md:text-7xl font-bold tracking-tight counter" data-target="1808598">0</span>
+                                </div>
+                                <p class="text-white/60 text-sm">เรื่องร้องเรียนสะสมทั่วประเทศ</p>
+                            </div>
+                        </div>
+                        <!-- Efficiency -->
+                        <div class="bento-card md:col-span-1 rounded-3xl p-6 bg-dark-surface flex flex-col items-center justify-center text-center relative min-h-[180px] md:min-h-[220px]">
+                            <div class="relative w-28 h-28 md:w-36 md:h-36 mb-4 md:mb-6">
+                                <svg class="w-full h-full transform -rotate-90">
+                                    <circle cx="50%" cy="50%" r="45%" stroke="#2c2c2e" stroke-width="10" fill="transparent" />
+                                    <circle id="progress-circle" cx="50%" cy="50%" r="45%" stroke="#34C759" stroke-width="10" fill="transparent" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" class="transition-all duration-[2000ms] ease-out" />
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <div class="flex items-baseline">
+                                        <span class="text-3xl md:text-4xl font-bold text-white counter" data-target="77">0</span>
+                                        <span class="text-base md:text-lg font-bold text-success ml-0.5">%</span>
+                                    </div>
                                 </div>
                             </div>
+                            <h3 class="text-lg md:text-xl font-bold text-white mb-1">แก้ไขเสร็จสิ้น</h3>
+                            <p class="text-text-secondary text-xs">อัตราการจัดการปัญหาสำเร็จ</p>
                         </div>
-                        <h3 class="text-lg md:text-xl font-bold text-white mb-1">แก้ไขเสร็จสิ้น</h3>
-                        <p class="text-text-secondary text-xs">อัตราการจัดการปัญหาสำเร็จ</p>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Thailand Map & List (Moved UP) -->
-        <section id="map" class="py-6 md:py-12 bg-dark-surface rounded-3xl px-4 md:px-8 mb-16 border border-white/5 reveal">
-            <div class="flex flex-col lg:flex-row gap-8">
-                <!-- Left/Top: Map + Legend -->
-                <div class="lg:w-1/2 flex flex-col">
-                    <div class="mb-4 relative flex justify-between items-center">
-                        <h2 class="text-xl md:text-2xl font-bold text-white">พื้นที่ครอบคลุม</h2>
-                        <button onclick="replayMapAnimation()" class="text-xs bg-white/10 hover:bg-blue-500 hover:text-white text-white px-3 py-1.5 rounded-full transition flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> รีเซ็ต</button>
-                    </div>
-                    
-                    <div class="map-wrapper rounded-2xl overflow-hidden border border-white/5 bg-black/30 w-full" id="map-container">
-                        <svg id="thailand-svg" width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
-                             <g transform="translate(-105, 30) scale(14)" class="map-group">
-                                <!-- SVG Paths (No change) -->
-                                <g id="Chiang_Rai" class="province"><title>เชียงราย (Chiang Rai)</title><circle cx="16" cy="2"/><circle cx="17" cy="2"/><circle cx="17" cy="3"/><circle cx="18" cy="3"/></g>
-                                <g id="Chiang_Mai" class="province"><title>เชียงใหม่ (Chiang Mai)</title><circle cx="13" cy="3"/><circle cx="14" cy="3"/><circle cx="15" cy="3"/><circle cx="13" cy="4"/><circle cx="14" cy="4"/><circle cx="15" cy="4"/><circle cx="13" cy="5"/><circle cx="14" cy="5"/></g>
-                                <g id="Mae_Hong_Son" class="province"><title>แม่ฮ่องสอน (Mae Hong Son)</title><circle cx="11" cy="4"/><circle cx="12" cy="4"/><circle cx="11" cy="5"/><circle cx="12" cy="5"/><circle cx="11" cy="6"/><circle cx="12" cy="6"/></g>
-                                <g id="Phayao" class="province"><title>พะเยา (Phayao)</title><circle cx="18" cy="4"/><circle cx="19" cy="4"/><circle cx="18" cy="5"/></g>
-                                <g id="Nan" class="province"><title>น่าน (Nan)</title><circle cx="19" cy="5"/><circle cx="20" cy="5"/><circle cx="19" cy="6"/><circle cx="20" cy="6"/><circle cx="20" cy="7"/></g>
-                                <g id="Lamphun" class="province"><title>ลำพูน (Lamphun)</title><circle cx="14" cy="6"/><circle cx="15" cy="6"/></g>
-                                <g id="Lampang" class="province"><title>ลำปาง (Lampang)</title><circle cx="16" cy="5"/><circle cx="17" cy="5"/><circle cx="16" cy="6"/><circle cx="17" cy="6"/></g>
-                                <g id="Phrae" class="province"><title>แพร่ (Phrae)</title><circle cx="18" cy="6"/><circle cx="19" cy="7"/><circle cx="18" cy="7"/></g>
-                                <g id="Tak" class="province"><title>ตาก (Tak)</title><circle cx="12" cy="7"/><circle cx="13" cy="7"/><circle cx="12" cy="8"/><circle cx="13" cy="8"/><circle cx="11" cy="9"/><circle cx="12" cy="9"/><circle cx="11" cy="10"/><circle cx="12" cy="10"/><circle cx="11" cy="11"/></g>
-                                <g id="Sukhothai" class="province"><title>สุโขทัย (Sukhothai)</title><circle cx="15" cy="7"/><circle cx="16" cy="7"/><circle cx="15" cy="8"/></g>
-                                <g id="Uttaradit" class="province"><title>อุตรดิตถ์ (Uttaradit)</title><circle cx="18" cy="8"/><circle cx="19" cy="8"/><circle cx="20" cy="8"/></g>
-                                <g id="Phitsanulok" class="province"><title>พิษณุโลก (Phitsanulok)</title><circle cx="17" cy="8"/><circle cx="17" cy="9"/><circle cx="18" cy="9"/><circle cx="19" cy="9"/></g>
-                                <g id="Kamphaeng_Phet" class="province"><title>กำแพงเพชร (Kamphaeng Phet)</title><circle cx="14" cy="8"/><circle cx="14" cy="9"/><circle cx="15" cy="9"/><circle cx="15" cy="10"/></g>
-                                <g id="Phichit" class="province"><title>พิจิตร (Phichit)</title><circle cx="16" cy="9"/><circle cx="16" cy="10"/><circle cx="17" cy="10"/></g>
-                                <g id="Phetchabun" class="province"><title>เพชรบูรณ์ (Phetchabun)</title><circle cx="18" cy="10"/><circle cx="19" cy="10"/><circle cx="18" cy="11"/><circle cx="19" cy="11"/><circle cx="18" cy="12"/></g>
-                                <g id="Nakhon_Sawan" class="province"><title>นครสวรรค์ (Nakhon Sawan)</title><circle cx="15" cy="11"/><circle cx="16" cy="11"/><circle cx="15" cy="12"/><circle cx="16" cy="12"/><circle cx="17" cy="12"/></g>
-                                <g id="Uthai_Thani" class="province"><title>อุทัยธานี (Uthai Thani)</title><circle cx="13" cy="11"/><circle cx="14" cy="11"/><circle cx="13" cy="12"/></g>
-                                <g id="Loei" class="province"><title>เลย (Loei)</title><circle cx="20" cy="9"/><circle cx="21" cy="9"/><circle cx="20" cy="10"/><circle cx="21" cy="10"/></g>
-                                <g id="Nong_Khai" class="province"><title>หนองคาย (Nong Khai)</title><circle cx="22" cy="9"/><circle cx="23" cy="9"/><circle cx="24" cy="9"/></g>
-                                <g id="Bueng_Kan" class="province"><title>บึงกาฬ (Bueng Kan)</title><circle cx="25" cy="9"/><circle cx="26" cy="9"/><circle cx="27" cy="9"/></g>
-                                <g id="Nong_Bua_Lamphu" class="province"><title>หนองบัวลำภู (Nong Bua Lamphu)</title><circle cx="22" cy="10"/></g>
-                                <g id="Udon_Thani" class="province"><title>อุดรธานี (Udon Thani)</title><circle cx="23" cy="10"/><circle cx="24" cy="10"/><circle cx="25" cy="10"/></g>
-                                <g id="Sakon_Nakhon" class="province"><title>สกลนคร (Sakon Nakhon)</title><circle cx="26" cy="10"/><circle cx="27" cy="10"/><circle cx="28" cy="10"/></g>
-                                <g id="Nakhon_Phanom" class="province"><title>นครพนม (Nakhon Phanom)</title><circle cx="29" cy="10"/><circle cx="29" cy="11"/><circle cx="30" cy="11"/></g>
-                                <g id="Mukdahan" class="province"><title>มุกดาหาร (Mukdahan)</title><circle cx="28" cy="12"/><circle cx="29" cy="12"/></g>
-                                <g id="Kalasin" class="province"><title>กาฬสินธุ์ (Kalasin)</title><circle cx="26" cy="11"/><circle cx="27" cy="11"/></g>
-                                <g id="Khon_Kaen" class="province"><title>ขอนแก่น (Khon Kaen)</title><circle cx="23" cy="11"/><circle cx="24" cy="11"/><circle cx="25" cy="11"/><circle cx="24" cy="12"/><circle cx="25" cy="12"/></g>
-                                <g id="Chaiyaphum" class="province"><title>ชัยภูมิ (Chaiyaphum)</title><circle cx="21" cy="11"/><circle cx="22" cy="11"/><circle cx="21" cy="12"/><circle cx="22" cy="12"/><circle cx="21" cy="13"/></g>
-                                <g id="Maha_Sarakham" class="province"><title>มหาสารคาม (Maha Sarakham)</title><circle cx="26" cy="12"/></g>
-                                <g id="Roi_Et" class="province"><title>ร้อยเอ็ด (Roi Et)</title><circle cx="27" cy="12"/><circle cx="27" cy="13"/><circle cx="28" cy="13"/></g>
-                                <g id="Yasothon" class="province"><title>ยโสธร (Yasothon)</title><circle cx="29" cy="13"/></g>
-                                <g id="Amnat_Charoen" class="province"><title>อำนาจเจริญ (Amnat Charoen)</title><circle cx="30" cy="13"/><circle cx="31" cy="13"/></g>
-                                <g id="Ubon_Ratchathani" class="province"><title>อุบลราชธานี (Ubon Ratchathani)</title><circle cx="30" cy="14"/><circle cx="31" cy="14"/><circle cx="32" cy="14"/><circle cx="31" cy="15"/><circle cx="32" cy="15"/><circle cx="33" cy="15"/></g>
-                                <g id="Sisaket" class="province"><title>ศรีสะเกษ (Sisaket)</title><circle cx="28" cy="14"/><circle cx="29" cy="14"/><circle cx="28" cy="15"/><circle cx="29" cy="15"/></g>
-                                <g id="Surin" class="province"><title>สุรินทร์ (Surin)</title><circle cx="26" cy="14"/><circle cx="27" cy="14"/><circle cx="26" cy="15"/><circle cx="27" cy="15"/></g>
-                                <g id="Buriram" class="province"><title>บุรีรัมย์ (Buriram)</title><circle cx="24" cy="13"/><circle cx="25" cy="13"/><circle cx="24" cy="14"/><circle cx="25" cy="14"/></g>
-                                <g id="Nakhon_Ratchasima" class="province"><title>นครราชสีมา (Nakhon Ratchasima)</title><circle cx="21" cy="14"/><circle cx="22" cy="14"/><circle cx="23" cy="14"/><circle cx="21" cy="15"/><circle cx="22" cy="15"/><circle cx="23" cy="15"/></g>
-                                <g id="Chai_Nat" class="province"><title>ชัยนาท (Chai Nat)</title><circle cx="15" cy="13"/><circle cx="16" cy="13"/></g>
-                                <g id="Sing_Buri" class="province"><title>สิงห์บุรี (Sing Buri)</title><circle cx="16" cy="14"/></g>
-                                <g id="Lopburi" class="province"><title>ลพบุรี (Lopburi)</title><circle cx="17" cy="13"/><circle cx="18" cy="13"/><circle cx="17" cy="14"/></g>
-                                <g id="Ang_Thong" class="province"><title>อ่างทอง (Ang Thong)</title><circle cx="16" cy="15"/></g>
-                                <g id="Saraburi" class="province"><title>สระบุรี (Saraburi)</title><circle cx="18" cy="14"/><circle cx="19" cy="14"/><circle cx="18" cy="15"/></g>
-                                <g id="Suphan_Buri" class="province"><title>สุพรรณบุรี (Suphan Buri)</title><circle cx="14" cy="14"/><circle cx="15" cy="14"/><circle cx="14" cy="15"/><circle cx="15" cy="15"/></g>
-                                <g id="Kanchanaburi" class="province"><title>กาญจนบุรี (Kanchanaburi)</title><circle cx="11" cy="12"/><circle cx="12" cy="12"/><circle cx="11" cy="13"/><circle cx="12" cy="13"/><circle cx="11" cy="14"/><circle cx="12" cy="14"/><circle cx="13" cy="14"/><circle cx="11" cy="15"/><circle cx="12" cy="15"/></g>
-                                <g id="Ayutthaya" class="province"><title>พระนครศรีอยุธยา (Ayutthaya)</title><circle cx="16" cy="16"/><circle cx="17" cy="16"/></g>
-                                <g id="Nakhon_Pathom" class="province"><title>นครปฐม (Nakhon Pathom)</title><circle cx="15" cy="16"/><circle cx="15" cy="17"/></g>
-                                <g id="Pathum_Thani" class="province"><title>ปทุมธานี (Pathum Thani)</title><circle cx="16" cy="17"/><circle cx="17" cy="17"/></g>
-                                <g id="Nonthaburi" class="province"><title>นนทบุรี (Nonthaburi)</title><circle cx="16" cy="18"/></g>
-                                <g id="Bangkok" class="province"><title>กรุงเทพมหานคร (Bangkok)</title><circle cx="17" cy="18"/><circle cx="18" cy="18"/></g>
-                                <g id="Samut_Prakan" class="province"><title>สมุทรปราการ (Samut Prakan)</title><circle cx="17" cy="19"/><circle cx="18" cy="19"/></g>
-                                <g id="Samut_Sakhon" class="province"><title>สมุทรสาคร (Samut Sakhon)</title><circle cx="16" cy="19"/></g>
-                                <g id="Samut_Songkhram" class="province"><title>สมุทรสงคราม (Samut Songkhram)</title><circle cx="15" cy="19"/></g>
-                                <g id="Nakhon_Nayok" class="province"><title>นครนายก (Nakhon Nayok)</title><circle cx="19" cy="15"/><circle cx="20" cy="15"/></g>
-                                <g id="Prachin_Buri" class="province"><title>ปราจีนบุรี (Prachin Buri)</title><circle cx="20" cy="16"/><circle cx="21" cy="16"/></g>
-                                <g id="Sa_Kaeo" class="province"><title>สระแก้ว (Sa Kaeo)</title><circle cx="22" cy="16"/><circle cx="23" cy="16"/><circle cx="24" cy="16"/></g>
-                                <g id="Chachoengsao" class="province"><title>ฉะเชิงเทรา (Chachoengsao)</title><circle cx="19" cy="16"/><circle cx="19" cy="17"/><circle cx="20" cy="17"/></g>
-                                <g id="Chonburi" class="province"><title>ชลบุรี (Chonburi)</title><circle cx="18" cy="20"/><circle cx="19" cy="20"/><circle cx="19" cy="21"/></g>
-                                <g id="Rayong" class="province"><title>ระยอง (Rayong)</title><circle cx="20" cy="21"/><circle cx="21" cy="21"/></g>
-                                <g id="Chanthaburi" class="province"><title>จันทบุรี (Chanthaburi)</title><circle cx="22" cy="20"/><circle cx="22" cy="21"/><circle cx="23" cy="21"/></g>
-                                <g id="Trat" class="province"><title>ตราด (Trat)</title><circle cx="23" cy="22"/><circle cx="24" cy="22"/><circle cx="24" cy="23"/></g>
-                                <g id="Ratchaburi" class="province"><title>ราชบุรี (Ratchaburi)</title><circle cx="13" cy="16"/><circle cx="14" cy="16"/><circle cx="13" cy="17"/><circle cx="14" cy="17"/><circle cx="13" cy="18"/><circle cx="14" cy="18"/></g>
-                                <g id="Phetchaburi" class="province"><title>เพชรบุรี (Phetchaburi)</title><circle cx="13" cy="19"/><circle cx="14" cy="19"/><circle cx="13" cy="20"/><circle cx="14" cy="20"/></g>
-                                <g id="Prachuap_Khiri_Khan" class="province"><title>ประจวบคีรีขันธ์ (Prachuap Khiri Khan)</title><circle cx="13" cy="21"/><circle cx="14" cy="21"/><circle cx="13" cy="22"/><circle cx="13" cy="23"/><circle cx="14" cy="23"/><circle cx="13" cy="24"/><circle cx="13" cy="25"/></g>
-                                <g id="Chumphon" class="province"><title>ชุมพร (Chumphon)</title><circle cx="13" cy="26"/><circle cx="14" cy="26"/><circle cx="13" cy="27"/><circle cx="14" cy="27"/></g>
-                                <g id="Ranong" class="province"><title>ระนอง (Ranong)</title><circle cx="12" cy="28"/><circle cx="13" cy="28"/><circle cx="12" cy="29"/></g>
-                                <g id="Surat_Thani" class="province"><title>สุราษฎร์ธานี (Surat Thani)</title><circle cx="14" cy="28"/><circle cx="15" cy="28"/><circle cx="14" cy="29"/><circle cx="15" cy="29"/><circle cx="16" cy="29"/><circle cx="14" cy="30"/><circle cx="15" cy="30"/></g>
-                                <g id="Phang_Nga" class="province"><title>พังงา (Phang Nga)</title><circle cx="13" cy="30"/><circle cx="13" cy="31"/><circle cx="14" cy="31"/></g>
-                                <g id="Phuket" class="province"><title>ภูเก็ต (Phuket)</title><circle cx="13" cy="32"/></g>
-                                <g id="Krabi" class="province"><title>กระบี่ (Krabi)</title><circle cx="14" cy="32"/><circle cx="15" cy="32"/></g>
-                                <g id="Nakhon_Si_Thammarat" class="province"><title>นครศรีธรรมราช (Nakhon Si Thammarat)</title><circle cx="16" cy="30"/><circle cx="17" cy="30"/><circle cx="16" cy="31"/><circle cx="17" cy="31"/><circle cx="16" cy="32"/><circle cx="17" cy="32"/></g>
-                                <g id="Trang" class="province"><title>ตรัง (Trang)</title><circle cx="15" cy="33"/><circle cx="16" cy="33"/></g>
-                                <g id="Phatthalung" class="province"><title>พัทลุง (Phatthalung)</title><circle cx="17" cy="33"/><circle cx="17" cy="34"/></g>
-                                <g id="Satun" class="province"><title>สตูล (Satun)</title><circle cx="15" cy="34"/><circle cx="16" cy="34"/></g>
-                                <g id="Songkhla" class="province"><title>สงขลา (Songkhla)</title><circle cx="18" cy="34"/><circle cx="19" cy="34"/><circle cx="18" cy="35"/><circle cx="19" cy="35"/></g>
-                                <g id="Pattani" class="province"><title>ปัตตานี (Pattani)</title><circle cx="20" cy="35"/><circle cx="21" cy="35"/></g>
-                                <g id="Yala" class="province"><title>ยะลา (Yala)</title><circle cx="19" cy="36"/><circle cx="20" cy="36"/><circle cx="20" cy="37"/></g>
-                                <g id="Narathiwat" class="province"><title>นราธิวาส (Narathiwat)</title><circle cx="21" cy="36"/><circle cx="22" cy="36"/><circle cx="21" cy="37"/></g>
-                            </g>
-                        </svg>
+            <!-- Thailand Map & List -->
+            <section class="py-6 md:py-12 bg-dark-surface rounded-3xl px-4 md:px-8 mb-16 border border-white/5">
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Left/Top: Map + Legend -->
+                    <div class="lg:w-1/2 flex flex-col">
+                        <div class="mb-4 relative flex justify-between items-center">
+                            <h2 class="text-xl md:text-2xl font-bold text-white">พื้นที่ครอบคลุม</h2>
+                            <button onclick="replayMapAnimation()" class="text-xs bg-white/10 hover:bg-blue-500 hover:text-white text-white px-3 py-1.5 rounded-full transition flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> รีเซ็ต</button>
+                        </div>
                         
-                         <!-- Legend Overlay -->
-                         <div class="map-legend-overlay flex flex-col gap-2">
-                             <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-success shadow-[0_0_8px_rgba(52,199,89,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">ครบทุกหน่วยราชการ <span id="count-completed" class="font-mono text-accent">0</span></span></div>
-                             <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-pending shadow-[0_0_8px_rgba(255,159,10,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">รอการอบรม <span id="count-pending" class="font-mono text-accent">0</span></span></div>
-                             <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-partial shadow-[0_0_8px_rgba(0,0,0,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">ใช้งานบางพื้นที่ <span id="count-partial" class="font-mono text-accent">0</span></span></div>
+                        <div class="map-wrapper rounded-2xl overflow-hidden border border-white/5 bg-black/30 w-full" id="map-container">
+                            <svg id="thailand-svg" width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+                                <g transform="translate(-105, 30) scale(14)" class="map-group">
+                                    <g id="Chiang_Rai" class="province"><title>เชียงราย</title><circle cx="16" cy="2"/><circle cx="17" cy="2"/><circle cx="17" cy="3"/><circle cx="18" cy="3"/></g>
+                                    <g id="Chiang_Mai" class="province"><title>เชียงใหม่</title><circle cx="13" cy="3"/><circle cx="14" cy="3"/><circle cx="15" cy="3"/><circle cx="13" cy="4"/><circle cx="14" cy="4"/><circle cx="15" cy="4"/><circle cx="13" cy="5"/><circle cx="14" cy="5"/></g>
+                                    <g id="Mae_Hong_Son" class="province"><title>แม่ฮ่องสอน</title><circle cx="11" cy="4"/><circle cx="12" cy="4"/><circle cx="11" cy="5"/><circle cx="12" cy="5"/><circle cx="11" cy="6"/><circle cx="12" cy="6"/></g>
+                                    <g id="Phayao" class="province"><title>พะเยา</title><circle cx="18" cy="4"/><circle cx="19" cy="4"/><circle cx="18" cy="5"/></g>
+                                    <g id="Nan" class="province"><title>น่าน</title><circle cx="19" cy="5"/><circle cx="20" cy="5"/><circle cx="19" cy="6"/><circle cx="20" cy="6"/><circle cx="20" cy="7"/></g>
+                                    <g id="Lamphun" class="province"><title>ลำพูน</title><circle cx="14" cy="6"/><circle cx="15" cy="6"/></g>
+                                    <g id="Lampang" class="province"><title>ลำปาง</title><circle cx="16" cy="5"/><circle cx="17" cy="5"/><circle cx="16" cy="6"/><circle cx="17" cy="6"/></g>
+                                    <g id="Phrae" class="province"><title>แพร่</title><circle cx="18" cy="6"/><circle cx="19" cy="7"/><circle cx="18" cy="7"/></g>
+                                    <g id="Tak" class="province"><title>ตาก</title><circle cx="12" cy="7"/><circle cx="13" cy="7"/><circle cx="12" cy="8"/><circle cx="13" cy="8"/><circle cx="11" cy="9"/><circle cx="12" cy="9"/><circle cx="11" cy="10"/><circle cx="12" cy="10"/><circle cx="11" cy="11"/></g>
+                                    <g id="Sukhothai" class="province"><title>สุโขทัย</title><circle cx="15" cy="7"/><circle cx="16" cy="7"/><circle cx="15" cy="8"/></g>
+                                    <g id="Uttaradit" class="province"><title>อุตรดิตถ์</title><circle cx="18" cy="8"/><circle cx="19" cy="8"/><circle cx="20" cy="8"/></g>
+                                    <g id="Phitsanulok" class="province"><title>พิษณุโลก</title><circle cx="17" cy="8"/><circle cx="17" cy="9"/><circle cx="18" cy="9"/><circle cx="19" cy="9"/></g>
+                                    <g id="Kamphaeng_Phet" class="province"><title>กำแพงเพชร</title><circle cx="14" cy="8"/><circle cx="14" cy="9"/><circle cx="15" cy="9"/><circle cx="15" cy="10"/></g>
+                                    <g id="Phichit" class="province"><title>พิจิตร</title><circle cx="16" cy="9"/><circle cx="16" cy="10"/><circle cx="17" cy="10"/></g>
+                                    <g id="Phetchabun" class="province"><title>เพชรบูรณ์</title><circle cx="18" cy="10"/><circle cx="19" cy="10"/><circle cx="18" cy="11"/><circle cx="19" cy="11"/><circle cx="18" cy="12"/></g>
+                                    <g id="Nakhon_Sawan" class="province"><title>นครสวรรค์</title><circle cx="15" cy="11"/><circle cx="16" cy="11"/><circle cx="15" cy="12"/><circle cx="16" cy="12"/><circle cx="17" cy="12"/></g>
+                                    <g id="Uthai_Thani" class="province"><title>อุทัยธานี</title><circle cx="13" cy="11"/><circle cx="14" cy="11"/><circle cx="13" cy="12"/></g>
+                                    <g id="Loei" class="province"><title>เลย</title><circle cx="20" cy="9"/><circle cx="21" cy="9"/><circle cx="20" cy="10"/><circle cx="21" cy="10"/></g>
+                                    <g id="Nong_Khai" class="province"><title>หนองคาย</title><circle cx="22" cy="9"/><circle cx="23" cy="9"/><circle cx="24" cy="9"/></g>
+                                    <g id="Bueng_Kan" class="province"><title>บึงกาฬ</title><circle cx="25" cy="9"/><circle cx="26" cy="9"/><circle cx="27" cy="9"/></g>
+                                    <g id="Nong_Bua_Lamphu" class="province"><title>หนองบัวลำภู</title><circle cx="22" cy="10"/></g>
+                                    <g id="Udon_Thani" class="province"><title>อุดรธานี</title><circle cx="23" cy="10"/><circle cx="24" cy="10"/><circle cx="25" cy="10"/></g>
+                                    <g id="Sakon_Nakhon" class="province"><title>สกลนคร</title><circle cx="26" cy="10"/><circle cx="27" cy="10"/><circle cx="28" cy="10"/></g>
+                                    <g id="Nakhon_Phanom" class="province"><title>นครพนม</title><circle cx="29" cy="10"/><circle cx="29" cy="11"/><circle cx="30" cy="11"/></g>
+                                    <g id="Mukdahan" class="province"><title>มุกดาหาร</title><circle cx="28" cy="12"/><circle cx="29" cy="12"/></g>
+                                    <g id="Kalasin" class="province"><title>กาฬสินธุ์</title><circle cx="26" cy="11"/><circle cx="27" cy="11"/></g>
+                                    <g id="Khon_Kaen" class="province"><title>ขอนแก่น</title><circle cx="23" cy="11"/><circle cx="24" cy="11"/><circle cx="25" cy="11"/><circle cx="24" cy="12"/><circle cx="25" cy="12"/></g>
+                                    <g id="Chaiyaphum" class="province"><title>ชัยภูมิ</title><circle cx="21" cy="11"/><circle cx="22" cy="11"/><circle cx="21" cy="12"/><circle cx="22" cy="12"/><circle cx="21" cy="13"/></g>
+                                    <g id="Maha_Sarakham" class="province"><title>มหาสารคาม</title><circle cx="26" cy="12"/></g>
+                                    <g id="Roi_Et" class="province"><title>ร้อยเอ็ด</title><circle cx="27" cy="12"/><circle cx="27" cy="13"/><circle cx="28" cy="13"/></g>
+                                    <g id="Yasothon" class="province"><title>ยโสธร</title><circle cx="29" cy="13"/></g>
+                                    <g id="Amnat_Charoen" class="province"><title>อำนาจเจริญ</title><circle cx="30" cy="13"/><circle cx="31" cy="13"/></g>
+                                    <g id="Ubon_Ratchathani" class="province"><title>อุบลราชธานี</title><circle cx="30" cy="14"/><circle cx="31" cy="14"/><circle cx="32" cy="14"/><circle cx="31" cy="15"/><circle cx="32" cy="15"/><circle cx="33" cy="15"/></g>
+                                    <g id="Sisaket" class="province"><title>ศรีสะเกษ</title><circle cx="28" cy="14"/><circle cx="29" cy="14"/><circle cx="28" cy="15"/><circle cx="29" cy="15"/></g>
+                                    <g id="Surin" class="province"><title>สุรินทร์</title><circle cx="26" cy="14"/><circle cx="27" cy="14"/><circle cx="26" cy="15"/><circle cx="27" cy="15"/></g>
+                                    <g id="Buriram" class="province"><title>บุรีรัมย์</title><circle cx="24" cy="13"/><circle cx="25" cy="13"/><circle cx="24" cy="14"/><circle cx="25" cy="14"/></g>
+                                    <g id="Nakhon_Ratchasima" class="province"><title>นครราชสีมา</title><circle cx="21" cy="14"/><circle cx="22" cy="14"/><circle cx="23" cy="14"/><circle cx="21" cy="15"/><circle cx="22" cy="15"/><circle cx="23" cy="15"/></g>
+                                    <g id="Chai_Nat" class="province"><title>ชัยนาท</title><circle cx="15" cy="13"/><circle cx="16" cy="13"/></g>
+                                    <g id="Sing_Buri" class="province"><title>สิงห์บุรี</title><circle cx="16" cy="14"/></g>
+                                    <g id="Lopburi" class="province"><title>ลพบุรี</title><circle cx="17" cy="13"/><circle cx="18" cy="13"/><circle cx="17" cy="14"/></g>
+                                    <g id="Ang_Thong" class="province"><title>อ่างทอง</title><circle cx="16" cy="15"/></g>
+                                    <g id="Saraburi" class="province"><title>สระบุรี</title><circle cx="18" cy="14"/><circle cx="19" cy="14"/><circle cx="18" cy="15"/></g>
+                                    <g id="Suphan_Buri" class="province"><title>สุพรรณบุรี</title><circle cx="14" cy="14"/><circle cx="15" cy="14"/><circle cx="14" cy="15"/><circle cx="15" cy="15"/></g>
+                                    <g id="Kanchanaburi" class="province"><title>กาญจนบุรี</title><circle cx="11" cy="12"/><circle cx="12" cy="12"/><circle cx="11" cy="13"/><circle cx="12" cy="13"/><circle cx="11" cy="14"/><circle cx="12" cy="14"/><circle cx="13" cy="14"/><circle cx="11" cy="15"/><circle cx="12" cy="15"/></g>
+                                    <g id="Ayutthaya" class="province"><title>พระนครศรีอยุธยา</title><circle cx="16" cy="16"/><circle cx="17" cy="16"/></g>
+                                    <g id="Nakhon_Pathom" class="province"><title>นครปฐม</title><circle cx="15" cy="16"/><circle cx="15" cy="17"/></g>
+                                    <g id="Pathum_Thani" class="province"><title>ปทุมธานี</title><circle cx="16" cy="17"/><circle cx="17" cy="17"/></g>
+                                    <g id="Nonthaburi" class="province"><title>นนทบุรี</title><circle cx="16" cy="18"/></g>
+                                    <g id="Bangkok" class="province"><title>กรุงเทพมหานคร</title><circle cx="17" cy="18"/><circle cx="18" cy="18"/></g>
+                                    <g id="Samut_Prakan" class="province"><title>สมุทรปราการ</title><circle cx="17" cy="19"/><circle cx="18" cy="19"/></g>
+                                    <g id="Samut_Sakhon" class="province"><title>สมุทรสาคร</title><circle cx="16" cy="19"/></g>
+                                    <g id="Samut_Songkhram" class="province"><title>สมุทรสงคราม</title><circle cx="15" cy="19"/></g>
+                                    <g id="Nakhon_Nayok" class="province"><title>นครนายก</title><circle cx="19" cy="15"/><circle cx="20" cy="15"/></g>
+                                    <g id="Prachin_Buri" class="province"><title>ปราจีนบุรี</title><circle cx="20" cy="16"/><circle cx="21" cy="16"/></g>
+                                    <g id="Sa_Kaeo" class="province"><title>สระแก้ว</title><circle cx="22" cy="16"/><circle cx="23" cy="16"/><circle cx="24" cy="16"/></g>
+                                    <g id="Chachoengsao" class="province"><title>ฉะเชิงเทรา</title><circle cx="19" cy="16"/><circle cx="19" cy="17"/><circle cx="20" cy="17"/></g>
+                                    <g id="Chonburi" class="province"><title>ชลบุรี</title><circle cx="18" cy="20"/><circle cx="19" cy="20"/><circle cx="19" cy="21"/></g>
+                                    <g id="Rayong" class="province"><title>ระยอง</title><circle cx="20" cy="21"/><circle cx="21" cy="21"/></g>
+                                    <g id="Chanthaburi" class="province"><title>จันทบุรี</title><circle cx="22" cy="20"/><circle cx="22" cy="21"/><circle cx="23" cy="21"/></g>
+                                    <g id="Trat" class="province"><title>ตราด</title><circle cx="23" cy="22"/><circle cx="24" cy="22"/><circle cx="24" cy="23"/></g>
+                                    <g id="Ratchaburi" class="province"><title>ราชบุรี</title><circle cx="13" cy="16"/><circle cx="14" cy="16"/><circle cx="13" cy="17"/><circle cx="14" cy="17"/><circle cx="13" cy="18"/><circle cx="14" cy="18"/></g>
+                                    <g id="Phetchaburi" class="province"><title>เพชรบุรี</title><circle cx="13" cy="19"/><circle cx="14" cy="19"/><circle cx="13" cy="20"/><circle cx="14" cy="20"/></g>
+                                    <g id="Prachuap_Khiri_Khan" class="province"><title>ประจวบคีรีขันธ์</title><circle cx="13" cy="21"/><circle cx="14" cy="21"/><circle cx="13" cy="22"/><circle cx="13" cy="23"/><circle cx="14" cy="23"/><circle cx="13" cy="24"/><circle cx="13" cy="25"/></g>
+                                    <g id="Chumphon" class="province"><title>ชุมพร</title><circle cx="13" cy="26"/><circle cx="14" cy="26"/><circle cx="13" cy="27"/><circle cx="14" cy="27"/></g>
+                                    <g id="Ranong" class="province"><title>ระนอง</title><circle cx="12" cy="28"/><circle cx="13" cy="28"/><circle cx="12" cy="29"/></g>
+                                    <g id="Surat_Thani" class="province"><title>สุราษฎร์ธานี</title><circle cx="14" cy="28"/><circle cx="15" cy="28"/><circle cx="14" cy="29"/><circle cx="15" cy="29"/><circle cx="16" cy="29"/><circle cx="14" cy="30"/><circle cx="15" cy="30"/></g>
+                                    <g id="Phang_Nga" class="province"><title>พังงา</title><circle cx="13" cy="30"/><circle cx="13" cy="31"/><circle cx="14" cy="31"/></g>
+                                    <g id="Phuket" class="province"><title>ภูเก็ต</title><circle cx="13" cy="32"/></g>
+                                    <g id="Krabi" class="province"><title>กระบี่</title><circle cx="14" cy="32"/><circle cx="15" cy="32"/></g>
+                                    <g id="Nakhon_Si_Thammarat" class="province"><title>นครศรีธรรมราช</title><circle cx="16" cy="30"/><circle cx="17" cy="30"/><circle cx="16" cy="31"/><circle cx="17" cy="31"/><circle cx="16" cy="32"/><circle cx="17" cy="32"/></g>
+                                    <g id="Trang" class="province"><title>ตรัง</title><circle cx="15" cy="33"/><circle cx="16" cy="33"/></g>
+                                    <g id="Phatthalung" class="province"><title>พัทลุง</title><circle cx="17" cy="33"/><circle cx="17" cy="34"/></g>
+                                    <g id="Satun" class="province"><title>สตูล</title><circle cx="15" cy="34"/><circle cx="16" cy="34"/></g>
+                                    <g id="Songkhla" class="province"><title>สงขลา</title><circle cx="18" cy="34"/><circle cx="19" cy="34"/><circle cx="18" cy="35"/><circle cx="19" cy="35"/></g>
+                                    <g id="Pattani" class="province"><title>ปัตตานี</title><circle cx="20" cy="35"/><circle cx="21" cy="35"/></g>
+                                    <g id="Yala" class="province"><title>ยะลา</title><circle cx="19" cy="36"/><circle cx="20" cy="36"/><circle cx="20" cy="37"/></g>
+                                    <g id="Narathiwat" class="province"><title>นราธิวาส</title><circle cx="21" cy="36"/><circle cx="22" cy="36"/><circle cx="21" cy="37"/></g>
+                                </g>
+                            </svg>
+                            
+                             <!-- Legend Overlay -->
+                             <div class="map-legend-overlay flex flex-col gap-2">
+                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-success shadow-[0_0_8px_rgba(52,199,89,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">ครบทุกหน่วยราชการ <span id="count-completed" class="font-mono text-accent">0</span></span></div>
+                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-pending shadow-[0_0_8px_rgba(255,159,10,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">รอการอบรม <span id="count-pending" class="font-mono text-accent">0</span></span></div>
+                                 <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-partial shadow-[0_0_8px_rgba(0,0,0,0.5)]"></span><span class="text-white flex-1 flex justify-between gap-4">ใช้งานบางพื้นที่ <span id="count-partial" class="font-mono text-accent">0</span></span></div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Right/Bottom: Filter & List -->
+                    <div class="lg:w-1/2 flex flex-col h-auto md:h-[600px] bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
+                         <div class="p-4 border-b border-white/10 bg-dark-surface/80 backdrop-blur z-10 sticky top-0">
+                            <div class="relative mb-0">
+                                <i class="fa-solid fa-search absolute left-3 top-3 text-text-secondary text-xs"></i>
+                                <input type="text" id="province-search" placeholder="ค้นหา / แนะนำจังหวัด..." class="w-full bg-black/30 border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-accent/50 placeholder-text-secondary/50">
+                            </div>
                          </div>
+                         <div class="flex-1 overflow-y-auto custom-scroll p-4 pb-20 relative" id="province-list-container"></div>
                     </div>
                 </div>
+            </section>
 
-                <!-- Right/Bottom: Filter & List -->
-                <div class="lg:w-1/2 flex flex-col h-auto md:h-[600px] bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
-                     <div class="p-4 border-b border-white/10 bg-dark-surface/80 backdrop-blur z-10 sticky top-0">
-                        <!-- Sticky Search -->
-                        <div class="relative mb-0">
-                            <i class="fa-solid fa-search absolute left-3 top-3 text-text-secondary text-xs"></i>
-                            <input type="text" id="province-search" placeholder="ค้นหา / แนะนำจังหวัด..." class="w-full bg-black/30 border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-accent/50 placeholder-text-secondary/50">
-                        </div>
-                     </div>
-                     <div class="flex-1 overflow-y-auto custom-scroll p-4 pb-20 relative" id="province-list-container"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- City Pulse: Calendar View (3 Months) -->
-        <section id="pulse" class="mb-16 reveal">
-            <div class="bento-card rounded-3xl p-6 md:p-8 bg-dark-surface border border-white/5 overflow-hidden">
+            <!-- City Pulse: Calendar View (3 Months) -->
+            <section class="mb-16 bento-card rounded-3xl p-6 md:p-8 bg-dark-surface border border-white/5 overflow-hidden">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div>
                         <h3 class="text-xl font-bold text-white">จังหวะชีวิตของเมือง (City Pulse)</h3>
@@ -430,24 +435,24 @@
                     </div>
                     
                     <div class="flex flex-col items-end gap-3 w-full md:w-auto">
-                        <!-- Legend -->
+                        <!-- Legend Range -->
                         <div class="flex items-center gap-2 text-[10px] text-text-secondary font-mono mt-1">
                             <span>0</span>
                             <div class="flex gap-1">
                                 <div class="w-3 h-3 rounded-[2px] level-0"></div>
-                                <div class="w-3 h-3 rounded-[2px] level-1"></div>
-                                <div class="w-3 h-3 rounded-[2px] level-2"></div>
-                                <div class="w-3 h-3 rounded-[2px] level-3"></div>
-                                <div class="w-3 h-3 rounded-[2px] level-4"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-1" title="1-100 เรื่อง"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-2" title="101-200 เรื่อง"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-3" title="201-300 เรื่อง"></div>
+                                <div class="w-3 h-3 rounded-[2px] level-4" title="300+ เรื่อง"></div>
                             </div>
-                            <span>400+</span>
+                            <span>300+ เรื่อง</span>
                         </div>
                     </div>
                 </div>
                 
                 <!-- 3 Month Calendar Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Month 1: Dec 2025 -->
+                    <!-- Month 1 -->
                     <div id="month-wrapper-0">
                         <div class="text-white text-sm font-bold mb-3 flex justify-between">
                             <span id="month-title-0">ธันวาคม 2568</span>
@@ -458,7 +463,7 @@
                         <div id="calendar-month-0" class="calendar-month-grid"></div>
                     </div>
 
-                    <!-- Month 2: Jan 2026 -->
+                    <!-- Month 2 -->
                     <div id="month-wrapper-1">
                         <div class="text-white text-sm font-bold mb-3 flex justify-between">
                             <span id="month-title-1">มกราคม 2569</span>
@@ -469,7 +474,7 @@
                         <div id="calendar-month-1" class="calendar-month-grid"></div>
                     </div>
 
-                    <!-- Month 3: Feb 2026 -->
+                    <!-- Month 3 -->
                     <div id="month-wrapper-2">
                         <div class="text-white text-sm font-bold mb-3 flex justify-between">
                             <span id="month-title-2">กุมภาพันธ์ 2569</span>
@@ -480,29 +485,76 @@
                         <div id="calendar-month-2" class="calendar-month-grid"></div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
 
-        <!-- LIVE FEED & TESTIMONIALS (Moved below map) -->
-        <section id="live" class="mb-16 reveal grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bento-card rounded-3xl p-8 bg-dark-surface border border-white/5">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-2 h-2 rounded-full bg-accent animate-ping"></div>
-                    <h3 class="text-xl font-bold text-white">กิจกรรมล่าสุดในระบบ</h3>
+    </div><!-- End of main container (Stats and Awards) -->
+
+    <!-- ============================================== -->
+    <!-- TAB 2: กิจกรรมล่าสุด (FULL SCREEN MAP)           -->
+    <!-- ============================================== -->
+    <div id="tab-activity" class="tab-content hidden">
+        <!-- The background map layer -->
+        <div class="absolute inset-0 z-0">
+            <!-- OpenStreetMap (Leaflet) -->
+            <div id="osm-map" class="w-full h-full absolute inset-0 z-0"></div>
+            
+            <!-- Live Target Highlight Info -->
+            <div id="live-target-info" class="absolute top-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-md border border-accent/50 px-6 py-3 rounded-full opacity-0 transition-opacity duration-500 text-center z-20 pointer-events-none shadow-[0_0_20px_rgba(96,165,250,0.3)]">
+                <div class="text-accent font-bold text-lg" id="live-target-prov">กำลังค้นหาพิกัด...</div>
+            </div>
+        </div>
+
+        <!-- Floating UI Overlay -->
+        <div class="absolute inset-0 z-30 pointer-events-none p-4 md:p-6 flex flex-col md:flex-row justify-between items-end md:items-stretch">
+            
+            <!-- Top Left: Title -->
+            <div class="absolute top-4 left-4 md:top-6 md:left-6 flex flex-col gap-4 pointer-events-auto">
+                <div class="bg-dark-surface/90 backdrop-blur-md p-4 md:p-6 rounded-3xl border border-white/10 shadow-2xl">
+                    <h2 class="text-xl md:text-3xl font-bold text-white">กิจกรรมล่าสุดแบบเรียลไทม์</h2>
+                    <p class="text-text-secondary text-xs md:text-sm mt-1">เกาะติดสถานการณ์ทุกพื้นที่ทั่วไทย</p>
                 </div>
-                <div id="activity-feed" class="feed-container no-scrollbar space-y-4"></div>
             </div>
 
-            <div class="bento-card rounded-3xl p-8 bg-fondue/20 border border-white/5 relative overflow-hidden">
-                <div class="absolute -top-10 -right-10 w-40 h-40 bg-accent/5 blur-3xl rounded-full"></div>
-                <div class="flex items-center gap-3 mb-6 relative z-10">
-                    <i class="fa-solid fa-heart text-red-500 animate-pulse"></i>
-                    <h3 class="text-xl font-bold text-white">เสียงสะท้อนจากประชาชน</h3>
+            <!-- Right Side / Bottom: Feeds Panel -->
+            <div class="pointer-events-auto w-full md:w-[380px] lg:w-[420px] flex flex-col gap-4 h-[50vh] md:h-full justify-end md:justify-start absolute bottom-4 left-4 right-4 md:relative md:left-auto md:right-auto md:bottom-auto">
+                
+                <!-- Activity Feed Card -->
+                <div class="bg-dark-surface/85 backdrop-blur-md border border-white/10 rounded-3xl p-5 flex flex-col flex-1 min-h-0 shadow-2xl">
+                    <div class="flex items-center gap-3 mb-4 shrink-0">
+                        <div class="w-2 h-2 rounded-full bg-accent animate-ping"></div>
+                        <h3 class="font-bold text-white text-lg">กิจกรรมล่าสุดในระบบ</h3>
+                    </div>
+                    <div id="activity-feed" class="feed-container no-scrollbar space-y-3 overflow-y-auto flex-1 pr-2"></div>
                 </div>
-                <div id="testimonial-feed" class="feed-container no-scrollbar relative z-10"></div>
-            </div>
-        </section>
 
+                <!-- Testimonials Card -->
+                <div class="bg-fondue/85 backdrop-blur-md border border-white/10 rounded-3xl p-5 flex flex-col flex-1 min-h-0 shadow-2xl relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 blur-3xl rounded-full pointer-events-none"></div>
+                    <div class="flex items-center gap-3 mb-4 shrink-0 relative z-10">
+                        <i class="fa-solid fa-heart text-red-500 animate-pulse"></i>
+                        <h3 class="font-bold text-white text-lg">เสียงสะท้อนจากประชาชน</h3>
+                    </div>
+                    <div id="testimonial-feed" class="feed-container no-scrollbar space-y-3 overflow-y-auto flex-1 relative z-10 pr-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: ประกาศรางวัล (AWARDS)                     -->
+    <!-- ============================================== -->
+    <div id="tab-awards" class="tab-content pt-32 pb-12 px-4 max-w-screen-xl mx-auto h-[70vh] items-center justify-center text-center">
+        <div class="flex flex-col items-center justify-center h-full">
+            <div class="text-accent text-6xl mb-6 relative inline-block">
+                <i class="fa-solid fa-person-digging relative z-10"></i>
+                <div class="absolute inset-0 bg-accent/30 blur-2xl rounded-full"></div>
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Under Construction</h2>
+            <p class="text-text-secondary text-base md:text-lg max-w-md mx-auto">
+                หน้าประกาศรางวัลประจำปี กำลังอยู่ระหว่างการรวบรวมข้อมูลและพัฒนาระบบ จะเปิดให้ใช้งานได้ในเร็วๆ นี้ครับ
+            </p>
+        </div>
     </div>
 
     <script>
@@ -521,13 +573,15 @@
             "เพชรบุรี": { date: "-", status: "partial" }, "ประจวบคีรีขันธ์": { date: "-", status: "partial" }, "ชุมพร": { date: "-", status: "partial" }, "ระนอง": { date: "20 มี.ค. 68", status: "completed" }, "สุราษฎร์ธานี": { date: "-", status: "partial" }, "พังงา": { date: "-", status: "partial" }, "ภูเก็ต": { date: "19-20 ธ.ค. 65", status: "completed" }, "กระบี่": { date: "-", status: "partial" }, "นครศรีธรรมราช": { date: "-", status: "partial" }, "ตรัง": { date: "22 ก.ย. 66", status: "completed" }, "พัทลุง": { date: "-", status: "partial" }, "สตูล": { date: "-", status: "partial" }, "สงขลา": { date: "-", status: "partial" }, "ปัตตานี": { date: "-", status: "partial" }, "ยะลา": { date: "-", status: "partial" }, "นราธิวาส": { date: "9 มี.ค 69", status: "pending" }
         };
 
-        const activities = [
-            "หน่วยงาน <span class='text-accent'>กทม.</span> <span class='text-yellow-400'>ได้รับแจ้ง</span> เรื่อง: ทางเท้าชำรุด",
-            "หน่วยงาน <span class='text-accent'>เทศบาลนครนนทบุรี</span> <span class='text-success'>แก้ไขเสร็จสิ้น</span> เรื่อง: ขยะอุดตัน",
-            "หน่วยงาน <span class='text-accent'>อบจ.ชลบุรี</span> <span class='text-blue-400'>เชิญหน่วยงานร่วม</span> เรื่อง: สายไฟรกรุงรัง",
-            "หน่วยงาน <span class='text-accent'>สน.ทองหล่อ</span> <span class='text-yellow-400'>รับแจ้ง</span> เรื่อง: จอดรถกีดขวาง",
-            "หน่วยงาน <span class='text-accent'>เทศบาลเมืองภูเก็ต</span> <span class='text-yellow-400'>รับแจ้ง</span> เรื่อง: ฝาท่อระบายน้ำหาย",
-            "หน่วยงาน <span class='text-accent'>กรมทางหลวง</span> <span class='text-yellow-400'>รับแจ้ง</span> เรื่อง: ไฟส่องสว่างดับ"
+        const liveActivities = [
+            { id: "Bangkok", org: "กทม.", action: "ได้รับแจ้ง", topic: "ทางเท้าชำรุด", color: "text-pending", coords: [13.7563, 100.5018] },
+            { id: "Nonthaburi", org: "เทศบาลนครนนทบุรี", action: "แก้ไขเสร็จสิ้น", topic: "ขยะอุดตัน", color: "text-success", coords: [13.8591, 100.5217] },
+            { id: "Chonburi", org: "อบจ.ชลบุรี", action: "เชิญหน่วยงานร่วม", topic: "สายไฟรกรุงรัง", color: "text-accent", coords: [13.3611, 100.9847] },
+            { id: "Bangkok", org: "สน.ทองหล่อ", action: "รับแจ้ง", topic: "จอดรถกีดขวาง", color: "text-pending", coords: [13.7367, 100.5828] }, 
+            { id: "Phuket", org: "เทศบาลเมืองภูเก็ต", action: "รับแจ้ง", topic: "ฝาท่อระบายน้ำหาย", color: "text-pending", coords: [7.8804, 98.3923] },
+            { id: "Chiang_Mai", org: "กรมทางหลวง", action: "กำลังดำเนินการ", topic: "ไฟส่องสว่างดับ", color: "text-accent", coords: [18.7883, 98.9853] },
+            { id: "Nakhon_Ratchasima", org: "เทศบาลนครราชสีมา", action: "แก้ไขเสร็จสิ้น", topic: "ถนนเป็นหลุมบ่อ", color: "text-success", coords: [14.9799, 102.0978] },
+            { id: "Songkhla", org: "เทศบาลนครหาดใหญ่", action: "ได้รับแจ้ง", topic: "น้ำท่วมขัง", color: "text-pending", coords: [7.0096, 100.4736] } 
         ];
         
         const feedback = [
@@ -537,6 +591,13 @@
             { type: "จราจร", title: "รถจอดขวางทางเข้าออก", msg: "เจ้าหน้าที่มาจัดการให้เร็วมาก" },
             { type: "ความปลอดภัย", title: "ฝาท่อชำรุดอันตราย", msg: "แก้ไขเรียบร้อย ปลอดภัยแล้วค่ะ" }
         ];
+
+        // --- GLOBAL VARIABLES ---
+        let osmMap;
+        let osmMarker;
+        let currentActivityIndex = 0;
+        const listContainer = document.getElementById('province-list-container');
+        const dynamicTooltip = document.getElementById('dynamic-tooltip');
 
         // --- UTILS ---
         function parseThaiDate(dateStr) {
@@ -551,28 +612,63 @@
             return new Date(year, month, 1);
         }
 
-        const listContainer = document.getElementById('province-list-container');
-        const dynamicTooltip = document.getElementById('dynamic-tooltip');
-        const dots = [];
-        let currentMobileDate = new Date();
-
-        // --- CORE UI ---
         function updateTimestamp() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-            document.getElementById('update-time').innerText = `ข้อมูล ณ วันที่ ${dateStr}`;
+            const timeEl = document.getElementById('update-time');
+            if (timeEl) {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                timeEl.innerText = `ข้อมูล ณ วันที่ ${dateStr}`;
+            }
         }
-        updateTimestamp();
 
+        // --- TAB SWITCHING LOGIC ---
+        function switchTab(tabId) {
+            // Hide all
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Show target
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            // Update nav styling
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('text-white', 'border-accent');
+                el.classList.add('text-text-secondary', 'border-transparent');
+            });
+            
+            const activeNav = document.getElementById('nav-' + tabId);
+            activeNav.classList.remove('text-text-secondary', 'border-transparent');
+            activeNav.classList.add('text-white', 'border-accent');
+
+            // Re-trigger animations or fix map dimensions if necessary
+            if (tabId === 'stats') {
+                startCounters(document.getElementById('tab-stats'));
+            } else if (tabId === 'activity') {
+                if (osmMap) {
+                    // Slight delay allows the container to be fully displayed before invalidating size.
+                    setTimeout(() => { 
+                        osmMap.invalidateSize(); 
+                        triggerActivityMapPan(liveActivities[currentActivityIndex % liveActivities.length]); 
+                    }, 100); 
+                }
+            }
+        }
+
+        // --- INITIALIZATION ---
         // Initialize immediately
         window.addEventListener('DOMContentLoaded', () => {
-             // FORCE START COUNTERS
-             startCounters(document.getElementById('stats')); 
+             updateTimestamp();
+             
+             // Initialize Leaflet
+             initLeaflet();
 
-             // 3 Months (Dec 25, Jan 26, Feb 26)
-             renderMonth(2025, 11, 'calendar-month-0'); // Dec 2025
-             renderMonth(2026, 0, 'calendar-month-1');  // Jan 2026
-             renderMonth(2026, 1, 'calendar-month-2');  // Feb 2026
+             // Setup Default Tab
+             startCounters(document.getElementById('tab-stats')); 
+
+             // Render Calendars: Dec 2025, Jan 2026, Feb 2026
+             renderMonth(2025, 11, 'calendar-month-0'); 
+             renderMonth(2026, 0, 'calendar-month-1');  
+             renderMonth(2026, 1, 'calendar-month-2');  
 
              playMapSequence();
              renderList();
@@ -580,6 +676,16 @@
              updateLegendCounts();
         });
 
+        // Scroll Reveal
+        window.addEventListener("scroll", () => {
+            document.querySelectorAll(".reveal").forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight - 50) {
+                    el.classList.add("active");
+                }
+            });
+        });
+
+        // --- STATS COUNTER ---
         function startCounters(section) {
             if (!section) return;
             const counters = section.querySelectorAll('.counter');
@@ -604,11 +710,16 @@
             });
              const circle = section.querySelector('#progress-circle');
             if (circle) {
-                setTimeout(() => { circle.style.strokeDashoffset = '65'; }, 100);
+                circle.style.transition = 'none';
+                circle.style.strokeDashoffset = '283';
+                setTimeout(() => { 
+                    circle.style.transition = 'all 2000ms ease-out';
+                    circle.style.strokeDashoffset = '65'; 
+                }, 50);
             }
         }
 
-        // --- CALENDAR HEATMAP (3 Months View) ---
+        // --- CALENDAR HEATMAP ---
         function renderMonth(year, monthIndex, containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -616,12 +727,11 @@
             
             const startDate = new Date(year, monthIndex, 1);
             const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-            const startDayOfWeek = startDate.getDay(); // 0 (Sun)
+            const startDayOfWeek = startDate.getDay();
             
-            // Padding
             for (let p = 0; p < startDayOfWeek; p++) {
                 const pad = document.createElement('div');
-                pad.className = 'w-[14px] h-[14px] opacity-0'; 
+                pad.className = 'calendar-day empty'; 
                 container.appendChild(pad);
             }
             
@@ -629,9 +739,9 @@
                 const day = document.createElement('div');
                 const level = Math.floor(Math.random() * 5); 
                 const count = level === 0 ? 0 : level * 100 + Math.floor(Math.random() * 99);
+                
                 day.className = `calendar-day level-${level}`;
-                day.innerText = i; // Day number
-                day.classList.add('text-[8px]', 'text-white/80');
+                day.innerText = i; 
                 
                 day.addEventListener('mousemove', (e) => {
                     const d = new Date(year, monthIndex, i);
@@ -643,90 +753,139 @@
                 day.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
                 
                 container.appendChild(day);
-                setTimeout(() => day.classList.add('show'), i * 10);
             }
         }
 
-        function pushFeed(containerId, content) {
+        // --- LEAFLET MAP & TOGGLE ---
+        function initLeaflet() {
+            osmMap = L.map('osm-map', { zoomControl: false }).setView([13.7563, 100.5018], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(osmMap);
+
+            const customIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="w-4 h-4 bg-accent rounded-full border-2 border-white shadow-[0_0_15px_rgba(96,165,250,1)] animate-pulse"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+            osmMarker = L.marker([13.7563, 100.5018], {icon: customIcon}).addTo(osmMap);
+        }
+
+        // --- LIVE FEEDS & MAP PANNING ---
+        function pushFeed(containerId, content, maxItems = 5) {
             const container = document.getElementById(containerId);
             if (!container) return;
             const div = document.createElement('div');
-            div.className = "feed-item p-3 mb-2 rounded-xl bg-white/5 border border-white/5 text-xs text-text-secondary";
+            div.className = "feed-item p-4 mb-3 rounded-2xl bg-black/40 border border-white/5 text-sm shadow-lg";
             div.innerHTML = content;
             container.prepend(div);
-            if (container.children.length > 8) container.removeChild(container.lastChild);
+            
+            while (container.children.length > maxItems) {
+                container.removeChild(container.lastChild);
+            }
+        }
+        
+        function triggerActivityMapPan(actData) {
+            const overlay = document.getElementById('live-target-info');
+            const overlayProv = document.getElementById('live-target-prov');
+
+            // Pan OSM Mode
+            // Only fly if map container has actual width/height to avoid Leaflet NaN errors
+            const osmContainerElement = document.getElementById('osm-map');
+            if (actData.coords && osmMap && osmContainerElement && osmContainerElement.clientWidth > 0 && osmContainerElement.clientHeight > 0) {
+                try {
+                    osmMap.flyTo(actData.coords, 9, { duration: 1.5 });
+                    osmMarker.setLatLng(actData.coords);
+                } catch(e) {
+                    console.warn("Leaflet map flyTo error avoided: container might be hidden.", e);
+                }
+            }
+            
+            // Update Overlay
+            overlayProv.innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${actData.org}`;
+            overlay.style.opacity = 1;
+            setTimeout(() => { overlay.style.opacity = 0; }, 2500);
         }
 
-        // Initialize Feeds Immediately
         function initFeeds() {
-            for(let i=0; i<4; i++) {
-                const act = activities[i % activities.length];
-                pushFeed('activity-feed', `<span class="text-xs text-text-secondary"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span><br>${act}`);
+            for(let i=0; i<5; i++) {
+                const act = liveActivities[i % liveActivities.length];
+                const html = `
+                    <div class="text-xs text-text-secondary mb-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</div>
+                    <div class="text-white">หน่วยงาน <span class='text-accent font-medium'>${act.org}</span> <span class='${act.color} font-bold'>${act.action}</span> เรื่อง <span class='text-white'>${act.topic}</span></div>
+                `;
+                pushFeed('activity-feed', html, 5);
                 
                 const fb = feedback[i % feedback.length];
                 pushFeed('testimonial-feed', `
-                    <div class="flex justify-between mb-1">
-                        <span class="font-bold text-accent">${fb.type}</span>
-                        <span class="text-xs text-text-secondary truncate ml-2">${fb.title}</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-accent bg-accent/10 px-2 py-0.5 rounded text-xs">${fb.type}</span>
+                        <span class="text-xs text-white font-medium truncate ml-2">${fb.title}</span>
                     </div>
-                    <div class="italic text-white/80">"${fb.msg}"</div>
-                `);
+                    <div class="italic text-white/80 leading-relaxed text-sm">"${fb.msg}"</div>
+                `, 5);
             }
         }
 
         setInterval(() => {
-            const act = activities[Math.floor(Math.random() * activities.length)];
-            pushFeed('activity-feed', `<span class="text-xs text-text-secondary"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</span><br>${act}`);
+            if(!document.getElementById('tab-activity').classList.contains('active')) return;
+
+            const act = liveActivities[currentActivityIndex % liveActivities.length];
+            const html = `
+                <div class="text-xs text-text-secondary mb-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</div>
+                <div class="text-white">หน่วยงาน <span class='text-accent font-medium'>${act.org}</span> <span class='${act.color} font-bold'>${act.action}</span> เรื่อง <span class='text-white'>${act.topic}</span></div>
+            `;
             
-            if(Math.random() > 0.6) {
+            pushFeed('activity-feed', html, 5);
+            triggerActivityMapPan(act); 
+            
+            if(Math.random() > 0.5) {
                 const fb = feedback[Math.floor(Math.random() * feedback.length)];
                 pushFeed('testimonial-feed', `
-                    <div class="flex justify-between mb-1">
-                        <span class="font-bold text-accent">${fb.type}</span>
-                        <span class="text-xs text-text-secondary truncate ml-2">${fb.title}</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-accent bg-accent/10 px-2 py-0.5 rounded text-xs">${fb.type}</span>
+                        <span class="text-xs text-white font-medium truncate ml-2">${fb.title}</span>
                     </div>
-                    <div class="italic text-white/80">"${fb.msg}"</div>
-                `);
+                    <div class="italic text-white/80 leading-relaxed text-sm">"${fb.msg}"</div>
+                `, 5);
             }
-        }, 3500);
+            
+            currentActivityIndex++;
+        }, 4000);
 
-        // --- MAP LOGIC ---
+        // --- STATS MAP LOGIC ---
         function updateLegendCounts() {
             const counts = { completed: 0, pending: 0, partial: 0 };
             Object.values(provinceData).forEach(d => {
                 if (counts[d.status] !== undefined) counts[d.status]++;
-                else counts['partial']++; // Default fallback
+                else counts['partial']++; 
             });
             document.getElementById('count-completed').innerText = counts.completed;
             document.getElementById('count-pending').innerText = counts.pending;
             document.getElementById('count-partial').innerText = counts.partial;
         }
 
-        const mapGroups = document.querySelectorAll('.province');
-        // REMOVED DUPLICATE DECLARATION OF DOTS HERE
-        
-        mapGroups.forEach(group => {
+        const mapGroupsList = [];
+
+        document.querySelectorAll('#map-container .province').forEach(group => {
             let thaiName = group.querySelector('title')?.textContent.split(' ')[0] || "";
             if (aliasMap[thaiName]) thaiName = aliasMap[thaiName];
             group.dataset.province = thaiName;
             const info = provinceData[thaiName] || { date: "-", status: "partial" };
-            dots.push({ el: group, name: thaiName, data: info, dateObj: parseThaiDate(info.date) });
+            
+            mapGroupsList.push({ el: group, name: thaiName, data: info, dateObj: parseThaiDate(info.date) });
 
             group.addEventListener('mouseenter', () => {
-                // No list scrolling on mobile by design request ("don't show list on mobile")
-                // Only on desktop do we scroll
                 if(window.innerWidth >= 768) {
                     const li = document.querySelector(`[data-list-prov="${thaiName}"]`);
                     if(li) {
                         const gridWrapper = li.closest('.grid')?.parentElement;
-                        
-                        // Auto expand group if hidden
                         if (gridWrapper && gridWrapper.classList.contains('hidden')) {
                              gridWrapper.classList.remove('hidden');
                              const icon = gridWrapper.previousElementSibling.querySelector('.fa-chevron-down');
                              if(icon) icon.classList.add('rotate-180');
                         }
-                        
                         listContainer?.scrollTo({ top: li.offsetTop - 120, behavior: 'smooth' });
                         li.classList.add('list-item-highlight');
                         setTimeout(() => li.classList.remove('list-item-highlight'), 1000);
@@ -752,7 +911,7 @@
                 'partial': { title: 'ใช้งานบางพื้นที่', color: 'text-white/60', icon: 'fa-map-pin' } 
             };
             
-            const isMobile = window.innerWidth < 768; // Simple check for mobile logic
+            const isMobile = window.innerWidth < 768;
 
             Object.keys(groups).forEach(key => {
                 const provinces = Object.entries(provinceData).filter(([name, data]) => data.status === key && name.includes(filterText)).sort((a, b) => parseThaiDate(a[1].date) - parseThaiDate(b[1].date));
@@ -762,16 +921,11 @@
                 groupContainer.className = 'mb-2';
                 
                 const header = document.createElement('h4');
-                // Header is clickable for all groups to toggle
                 header.className = `text-sm font-bold uppercase p-3 rounded-lg bg-white/5 flex justify-between items-center ${groups[key].color} cursor-pointer hover:bg-white/10`;
                 header.innerHTML = `<div><i class="fa-solid ${groups[key].icon} mr-2"></i>${groups[key].title} (${provinces.length})</div><i class="fa-solid fa-chevron-down transform transition-transform duration-300"></i>`;
                 groupContainer.appendChild(header);
                 
                 const gridWrapper = document.createElement('div');
-                // Default behavior: 
-                // - If Searching: Always Open
-                // - If Mobile: Always Collapsed (unless searching)
-                // - If Desktop: Open by default
                 let isCollapsed = false;
                 if (!filterText && isMobile) isCollapsed = true;
                 
@@ -787,19 +941,16 @@
                 });
 
                 const grid = document.createElement('div');
-                // Use flex-wrap everywhere (chips)
                 grid.className = 'flex flex-wrap gap-2 pt-2';
                 
                 provinces.forEach(([name, data]) => {
                     const item = document.createElement('div');
-                    // Chip Style
                     item.className = 'flex items-center cursor-pointer border border-transparent hover:border-white/10 list-item-sync px-3 py-1.5 rounded-full bg-white/10 text-xs text-white';
                     item.setAttribute('data-list-prov', name);
-                    // Just name, no date in chips
                     item.innerHTML = `<span class="font-medium">${name}</span>`;
                     
-                    item.addEventListener('mouseenter', () => document.querySelector(`.province[data-province="${name}"]`)?.classList.add('highlight-group'));
-                    item.addEventListener('mouseleave', () => document.querySelector(`.province[data-province="${name}"]`)?.classList.remove('highlight-group'));
+                    item.addEventListener('mouseenter', () => document.querySelector(`#map-container .province[data-province="${name}"]`)?.classList.add('highlight-group'));
+                    item.addEventListener('mouseleave', () => document.querySelector(`#map-container .province[data-province="${name}"]`)?.classList.remove('highlight-group'));
                     grid.appendChild(item);
                 });
                 gridWrapper.appendChild(grid);
@@ -809,10 +960,11 @@
         }
 
         function playMapSequence() {
-            const timeline = dots.filter(d => d.data.status !== 'partial').sort((a, b) => a.dateObj - b.dateObj);
+            const timeline = mapGroupsList.filter(d => d.data.status !== 'partial').sort((a, b) => a.dateObj - b.dateObj);
             const orderedDates = timeline.map(d => d.data.date).filter((v, i, a) => a.indexOf(v) === i);
             const dotsByDate = {};
-            dots.forEach(d => {
+            
+            mapGroupsList.forEach(d => {
                 d.el.classList.remove('completed', 'pending', 'highlight-group');
                 const ds = d.data.date;
                 if (!dotsByDate[ds]) dotsByDate[ds] = [];
@@ -827,9 +979,8 @@
                         setTimeout(() => item.el.classList.add(item.data.status), 150);
                         setTimeout(() => item.el.classList.remove('animating-flip'), 300);
                         
-                        // Optional: Highlight list item if visible
                         const li = document.querySelector(`[data-list-prov="${item.name}"]`);
-                        if (li && li.offsetParent !== null) { // Check visibility
+                        if (li && li.offsetParent !== null) { 
                             li.classList.add('list-item-highlight');
                             setTimeout(() => li.classList.remove('list-item-highlight'), 400);
                         }
