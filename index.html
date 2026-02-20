@@ -69,7 +69,13 @@
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
+        /* --- Scroll Reveal Animation --- */
         .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.active {
             opacity: 1;
             transform: translateY(0);
         }
@@ -136,21 +142,34 @@
         .calendar-day {
             aspect-ratio: 1;
             border-radius: 4px;
-            background-color: #262626; 
+            background-color: transparent; 
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
             color: rgba(255,255,255,0.8);
             cursor: pointer;
-            transition: all 0.2s ease;
-            opacity: 1;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Hidden initially for animation */
+            opacity: 0;
+            transform: scale(0.5);
         }
-        .calendar-day:hover { transform: scale(1.2); z-index: 10; border: 1px solid white; }
-        .calendar-day.empty { background-color: transparent; cursor: default; }
-        .calendar-day.empty:hover { transform: none; border: none; }
+        .calendar-day:not(.empty):hover { 
+            transform: scale(1.2) !important; 
+            z-index: 10; 
+            border: 1px solid white; 
+        }
+        .calendar-day.empty { 
+            cursor: default; 
+            opacity: 1; /* Keep layout structure */
+            transform: scale(1);
+        }
+        .calendar-day.show { 
+            opacity: 1; 
+            transform: scale(1);
+        }
         
-        /* Heatmap Levels */
+        /* Heatmap Levels (Colors applied dynamically via JS for animation) */
         .level-0 { background-color: #262626; color: #666; }
         .level-1 { background-color: #4a3728; color: #fff; }
         .level-2 { background-color: #78350f; color: #fff; }
@@ -238,19 +257,20 @@
     <nav class="glass-nav fixed w-full z-50 transition-all duration-300 border-b border-white/10 h-16">
         <div class="max-w-screen-xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
             <!-- Logo & Brand -->
-            <div class="flex items-center gap-3">
-                <img src="traffy_logo.png" alt="Traffy Fondue" class="h-8 md:h-10 w-auto object-contain bg-white rounded-lg p-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+            <div class="flex items-center gap-3 shrink-0 mr-4">
+                <img src="traffy_logo.png" alt="Traffy Fondue" class="h-8 md:h-10 w-auto object-contain bg-white rounded-lg p-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                 <div class="bg-fondue text-white w-8 h-8 rounded-xl flex items-center justify-center shadow-lg hidden">
                     <i class="fa-solid fa-layer-group text-sm"></i>
                 </div>
-                <span class="font-bold text-lg tracking-tight text-white block">Fondue Award</span>
+                <!-- Hide text on very small mobile screens -->
+                <span class="font-bold text-lg tracking-tight text-white hidden sm:block whitespace-nowrap">Fondue Award</span>
             </div>
 
-            <!-- Navigation Tabs -->
-            <div class="flex space-x-4 md:space-x-6 text-sm font-medium overflow-x-auto no-scrollbar h-full items-center">
-                <button onclick="switchTab('stats')" id="nav-stats" class="nav-link text-white border-b-2 border-accent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center">สถิติของระบบ</button>
-                <button onclick="switchTab('activity')" id="nav-activity" class="nav-link text-text-secondary border-b-2 border-transparent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center">กิจกรรมล่าสุด</button>
-                <button onclick="switchTab('awards')" id="nav-awards" class="nav-link text-text-secondary border-b-2 border-transparent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center">ประกาศรางวัล</button>
+            <!-- Navigation Tabs (Scrollable on Mobile) -->
+            <div class="flex space-x-4 md:space-x-6 text-sm font-medium overflow-x-auto no-scrollbar h-full items-center flex-1 sm:flex-none justify-start sm:justify-end">
+                <button onclick="switchTab('stats')" id="nav-stats" class="nav-link text-white border-b-2 border-accent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center shrink-0">สถิติของระบบ</button>
+                <button onclick="switchTab('activity')" id="nav-activity" class="nav-link text-text-secondary border-b-2 border-transparent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center shrink-0">กิจกรรมล่าสุด</button>
+                <button onclick="switchTab('awards')" id="nav-awards" class="nav-link text-text-secondary border-b-2 border-transparent hover:text-white transition whitespace-nowrap h-full px-2 flex items-center shrink-0">ประกาศรางวัล</button>
             </div>
         </div>
     </nav>
@@ -258,7 +278,7 @@
     <div id="dynamic-tooltip"></div>
 
     <!-- Main Content Wrapper -->
-    <div class="pt-24 md:pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto">
+    <div class="pt-24 md:pt-32 pb-12 px-4 md:px-6 max-w-screen-xl mx-auto relative z-10">
         
         <!-- ============================================== -->
         <!-- TAB 1: สถิติของระบบ (SYSTEM STATS)               -->
@@ -266,7 +286,7 @@
         <div id="tab-stats" class="tab-content active">
             
             <!-- Hero Section -->
-            <div class="flex flex-col xl:flex-row gap-6 md:gap-10 mb-8 md:mb-12">
+            <div class="flex flex-col xl:flex-row gap-6 md:gap-10 mb-8 md:mb-12 reveal">
                 <div class="xl:w-1/3 flex flex-col justify-center text-center xl:text-left">
                     <div class="inline-flex items-center justify-center xl:justify-start gap-2 mb-2 md:mb-4">
                         <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
@@ -312,7 +332,7 @@
             </div>
 
             <!-- Thailand Map & List -->
-            <section class="py-6 md:py-12 bg-dark-surface rounded-3xl px-4 md:px-8 mb-16 border border-white/5">
+            <section class="py-6 md:py-12 bg-dark-surface rounded-3xl px-4 md:px-8 mb-16 border border-white/5 reveal">
                 <div class="flex flex-col lg:flex-row gap-8">
                     <!-- Left/Top: Map + Legend -->
                     <div class="lg:w-1/2 flex flex-col">
@@ -427,7 +447,7 @@
             </section>
 
             <!-- City Pulse: Calendar View (3 Months) -->
-            <section class="mb-16 bento-card rounded-3xl p-6 md:p-8 bg-dark-surface border border-white/5 overflow-hidden">
+            <section class="mb-16 bento-card rounded-3xl p-6 md:p-8 bg-dark-surface border border-white/5 overflow-hidden reveal">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div>
                         <h3 class="text-xl font-bold text-white">จังหวะชีวิตของเมือง (City Pulse)</h3>
@@ -506,36 +526,22 @@
         </div>
 
         <!-- Floating UI Overlay -->
-        <div class="absolute inset-0 z-30 pointer-events-none p-4 md:p-6 flex flex-col md:flex-row justify-between items-end md:items-stretch">
+        <div class="absolute inset-0 z-30 pointer-events-none p-4 md:p-6 flex flex-col justify-end md:justify-start md:items-end">
             
-            <!-- Top Left: Title -->
-            <div class="absolute top-4 left-4 md:top-6 md:left-6 flex flex-col gap-4 pointer-events-auto">
-                <div class="bg-dark-surface/90 backdrop-blur-md p-4 md:p-6 rounded-3xl border border-white/10 shadow-2xl">
-                    <h2 class="text-xl md:text-3xl font-bold text-white">กิจกรรมล่าสุดแบบเรียลไทม์</h2>
-                    <p class="text-text-secondary text-xs md:text-sm mt-1">เกาะติดสถานการณ์ทุกพื้นที่ทั่วไทย</p>
-                </div>
-            </div>
-
-            <!-- Right Side / Bottom: Feeds Panel -->
-            <div class="pointer-events-auto w-full md:w-[380px] lg:w-[420px] flex flex-col gap-4 h-[50vh] md:h-full justify-end md:justify-start absolute bottom-4 left-4 right-4 md:relative md:left-auto md:right-auto md:bottom-auto">
+            <!-- Right Side / Bottom: Single Feed Panel -->
+            <div class="pointer-events-auto w-full md:w-[380px] lg:w-[420px] flex flex-col gap-4 h-[300px] md:h-[calc(100vh-120px)] mt-0 md:mt-[72px]">
                 
-                <!-- Activity Feed Card -->
-                <div class="bg-dark-surface/85 backdrop-blur-md border border-white/10 rounded-3xl p-5 flex flex-col flex-1 min-h-0 shadow-2xl">
-                    <div class="flex items-center gap-3 mb-4 shrink-0">
-                        <div class="w-2 h-2 rounded-full bg-accent animate-ping"></div>
-                        <h3 class="font-bold text-white text-lg">กิจกรรมล่าสุดในระบบ</h3>
+                <!-- Combined Activity & Testimonials Card -->
+                <div class="bg-dark-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col shadow-2xl relative overflow-hidden h-full w-full">
+                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-accent/5 blur-3xl rounded-full pointer-events-none"></div>
+                    <div class="flex items-center justify-between mb-4 shrink-0 relative z-10 border-b border-white/10 pb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full bg-accent animate-ping"></div>
+                            <h3 class="font-bold text-white text-base md:text-lg">กิจกรรม & เสียงสะท้อน</h3>
+                        </div>
+                        <i class="fa-solid fa-satellite-dish text-text-secondary text-sm"></i>
                     </div>
-                    <div id="activity-feed" class="feed-container no-scrollbar space-y-3 overflow-y-auto flex-1 pr-2"></div>
-                </div>
-
-                <!-- Testimonials Card -->
-                <div class="bg-fondue/85 backdrop-blur-md border border-white/10 rounded-3xl p-5 flex flex-col flex-1 min-h-0 shadow-2xl relative overflow-hidden">
-                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 blur-3xl rounded-full pointer-events-none"></div>
-                    <div class="flex items-center gap-3 mb-4 shrink-0 relative z-10">
-                        <i class="fa-solid fa-heart text-red-500 animate-pulse"></i>
-                        <h3 class="font-bold text-white text-lg">เสียงสะท้อนจากประชาชน</h3>
-                    </div>
-                    <div id="testimonial-feed" class="feed-container no-scrollbar space-y-3 overflow-y-auto flex-1 relative z-10 pr-2"></div>
+                    <div id="combined-feed" class="feed-container no-scrollbar space-y-3 overflow-y-auto flex-1 relative z-10 pr-1"></div>
                 </div>
             </div>
         </div>
@@ -585,11 +591,11 @@
         ];
         
         const feedback = [
-            { type: "ความสะอาด", title: "ขยะล้นถังหน้าตลาด", msg: "แจ้งปุ๊บมาเก็บปั๊บ ไวมากค่ะ" },
-            { type: "ทางเท้า", title: "อิฐตัวหนอนกระดก", msg: "ซ่อมเสร็จแล้ว เดินสะดวกขึ้นเยอะครับ" },
-            { type: "ไฟฟ้า", title: "ไฟกิ่งดับทั้งซอย", msg: "สว่างแล้ว อุ่นใจขึ้นมาก ขอบคุณครับ" },
-            { type: "จราจร", title: "รถจอดขวางทางเข้าออก", msg: "เจ้าหน้าที่มาจัดการให้เร็วมาก" },
-            { type: "ความปลอดภัย", title: "ฝาท่อชำรุดอันตราย", msg: "แก้ไขเรียบร้อย ปลอดภัยแล้วค่ะ" }
+            { id: "Bangkok", org: "กทม.", type: "rating", stars: 5, topic: "ความสะอาด", coords: [13.7563, 100.5018] },
+            { id: "Nonthaburi", org: "เทศบาลนครนนทบุรี", type: "comment", msg: "แจ้งปุ๊บมาเก็บปั๊บ ไวมากค่ะ", topic: "ความสะอาด", coords: [13.8591, 100.5217] },
+            { id: "Chonburi", org: "อบจ.ชลบุรี", type: "rating", stars: 4, topic: "ทางเท้า", coords: [13.3611, 100.9847] },
+            { id: "Bangkok", org: "สน.ทองหล่อ", type: "comment", msg: "เจ้าหน้าที่มาจัดการให้เร็วมาก", topic: "จราจร", coords: [13.7367, 100.5828] },
+            { id: "Phuket", org: "เทศบาลเมืองภูเก็ต", type: "rating", stars: 5, topic: "ความปลอดภัย", coords: [7.8804, 98.3923] }
         ];
 
         // --- GLOBAL VARIABLES ---
@@ -598,6 +604,7 @@
         let currentActivityIndex = 0;
         const listContainer = document.getElementById('province-list-container');
         const dynamicTooltip = document.getElementById('dynamic-tooltip');
+        const mapGroupsList = [];
 
         // --- UTILS ---
         function parseThaiDate(dateStr) {
@@ -621,7 +628,7 @@
             }
         }
 
-        // --- TAB SWITCHING LOGIC ---
+        // --- TAB SWITCHING & ANIMATION RE-RUN LOGIC ---
         function switchTab(tabId) {
             // Hide all
             document.querySelectorAll('.tab-content').forEach(el => {
@@ -640,12 +647,16 @@
             activeNav.classList.remove('text-text-secondary', 'border-transparent');
             activeNav.classList.add('text-white', 'border-accent');
 
-            // Re-trigger animations or fix map dimensions if necessary
             if (tabId === 'stats') {
-                startCounters(document.getElementById('tab-stats'));
+                // Reset reveal elements to re-trigger animation on scroll or immediately
+                document.querySelectorAll('#tab-stats .reveal').forEach(el => el.classList.remove('active'));
+                
+                // Re-run animations with a slight delay so display:block takes effect
+                setTimeout(() => {
+                    runStatsAnimations();
+                }, 50);
             } else if (tabId === 'activity') {
                 if (osmMap) {
-                    // Slight delay allows the container to be fully displayed before invalidating size.
                     setTimeout(() => { 
                         osmMap.invalidateSize(); 
                         triggerActivityMapPan(liveActivities[currentActivityIndex % liveActivities.length]); 
@@ -654,36 +665,85 @@
             }
         }
 
-        // --- INITIALIZATION ---
-        // Initialize immediately
-        window.addEventListener('DOMContentLoaded', () => {
-             updateTimestamp();
-             
-             // Initialize Leaflet
-             initLeaflet();
+        function runStatsAnimations() {
+            // 1. Counters
+            startCounters(document.getElementById('tab-stats')); 
+            
+            // 2. Calendars
+            renderMonth(2025, 11, 'calendar-month-0'); 
+            renderMonth(2026, 0, 'calendar-month-1');  
+            renderMonth(2026, 1, 'calendar-month-2');  
+            
+            // 3. Map popup sequence
+            replayMapAnimation();
 
-             // Setup Default Tab
-             startCounters(document.getElementById('tab-stats')); 
+            // 4. Force check reveal elements in viewport immediately
+            checkReveal();
+        }
 
-             // Render Calendars: Dec 2025, Jan 2026, Feb 2026
-             renderMonth(2025, 11, 'calendar-month-0'); 
-             renderMonth(2026, 0, 'calendar-month-1');  
-             renderMonth(2026, 1, 'calendar-month-2');  
-
-             playMapSequence();
-             renderList();
-             initFeeds();
-             updateLegendCounts();
-        });
-
-        // Scroll Reveal
-        window.addEventListener("scroll", () => {
+        function checkReveal() {
             document.querySelectorAll(".reveal").forEach(el => {
                 if (el.getBoundingClientRect().top < window.innerHeight - 50) {
                     el.classList.add("active");
                 }
             });
+        }
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+             updateTimestamp();
+             
+             // Initialize Leaflet Map once
+             initLeaflet();
+
+             // Populate map groups list once
+             document.querySelectorAll('#map-container .province').forEach(group => {
+                 let thaiName = group.querySelector('title')?.textContent.split(' ')[0] || "";
+                 if (aliasMap[thaiName]) thaiName = aliasMap[thaiName];
+                 group.dataset.province = thaiName;
+                 const info = provinceData[thaiName] || { date: "-", status: "partial" };
+                 
+                 mapGroupsList.push({ el: group, name: thaiName, data: info, dateObj: parseThaiDate(info.date) });
+                 
+                 // Hover interactions for the SVG map
+                 group.addEventListener('mouseenter', () => {
+                     if(window.innerWidth >= 768) {
+                         const li = document.querySelector(`[data-list-prov="${thaiName}"]`);
+                         if(li) {
+                             const gridWrapper = li.closest('.grid')?.parentElement;
+                             if (gridWrapper && gridWrapper.classList.contains('hidden')) {
+                                  gridWrapper.classList.remove('hidden');
+                                  const icon = gridWrapper.previousElementSibling.querySelector('.fa-chevron-down');
+                                  if(icon) icon.classList.add('rotate-180');
+                             }
+                             listContainer?.scrollTo({ top: li.offsetTop - 120, behavior: 'smooth' });
+                             li.classList.add('list-item-highlight');
+                             setTimeout(() => li.classList.remove('list-item-highlight'), 1000);
+                         }
+                     }
+                 });
+                 
+                  group.addEventListener('mousemove', (e) => {
+                     dynamicTooltip.style.opacity = 1;
+                     dynamicTooltip.innerHTML = `<div class="text-center"><strong>${thaiName}</strong><br><span class="text-xs opacity-80 block mb-1">${info.date !== '-' ? info.date : ''}</span><div class="mt-1 pt-1 border-t border-white/10 text-xs">${statusLabels[info.status]}</div></div>`;
+                     dynamicTooltip.style.left = e.pageX + 'px';
+                     dynamicTooltip.style.top = (e.pageY - 10) + 'px';
+                 });
+                 group.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
+             });
+
+             // Initialize Data & Lists
+             renderList();
+             initFeeds();
+             updateLegendCounts();
+             
+             // Initial Animation Run
+             runStatsAnimations();
         });
+
+        // Trigger reveal on scroll
+        window.addEventListener("scroll", checkReveal);
+
 
         // --- STATS COUNTER ---
         function startCounters(section) {
@@ -737,10 +797,11 @@
             
             for(let i=1; i<=daysInMonth; i++) {
                 const day = document.createElement('div');
-                const level = Math.floor(Math.random() * 5); 
-                const count = level === 0 ? 0 : level * 100 + Math.floor(Math.random() * 99);
+                // Use let to ensure block scope for setTimeout closure
+                let level = Math.floor(Math.random() * 5); 
+                let count = level === 0 ? 0 : level * 100 + Math.floor(Math.random() * 99);
                 
-                day.className = `calendar-day level-${level}`;
+                day.className = `calendar-day`; // Start without color level
                 day.innerText = i; 
                 
                 day.addEventListener('mousemove', (e) => {
@@ -753,10 +814,15 @@
                 day.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
                 
                 container.appendChild(day);
+                
+                // Add color and animation class with delay
+                setTimeout(() => {
+                    day.classList.add(`level-${level}`, 'show');
+                }, i * 20);
             }
         }
 
-        // --- LEAFLET MAP & TOGGLE ---
+        // --- LEAFLET MAP ---
         function initLeaflet() {
             osmMap = L.map('osm-map', { zoomControl: false }).setView([13.7563, 100.5018], 6);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -773,11 +839,11 @@
         }
 
         // --- LIVE FEEDS & MAP PANNING ---
-        function pushFeed(containerId, content, maxItems = 5) {
+        function pushFeed(containerId, content, maxItems = 6) {
             const container = document.getElementById(containerId);
             if (!container) return;
             const div = document.createElement('div');
-            div.className = "feed-item p-4 mb-3 rounded-2xl bg-black/40 border border-white/5 text-sm shadow-lg";
+            div.className = "feed-item p-3 md:p-4 mb-3 rounded-2xl bg-black/40 border border-white/5 text-sm shadow-lg";
             div.innerHTML = content;
             container.prepend(div);
             
@@ -791,65 +857,79 @@
             const overlayProv = document.getElementById('live-target-prov');
 
             // Pan OSM Mode
-            // Only fly if map container has actual width/height to avoid Leaflet NaN errors
             const osmContainerElement = document.getElementById('osm-map');
-            if (actData.coords && osmMap && osmContainerElement && osmContainerElement.clientWidth > 0 && osmContainerElement.clientHeight > 0) {
+            // Safe check to avoid Leaflet NaN error when container is hidden
+            if (actData.coords && osmMap && osmContainerElement && osmContainerElement.clientWidth > 0) {
                 try {
                     osmMap.flyTo(actData.coords, 9, { duration: 1.5 });
                     osmMarker.setLatLng(actData.coords);
                 } catch(e) {
-                    console.warn("Leaflet map flyTo error avoided: container might be hidden.", e);
+                    console.warn("Leaflet map flyTo error avoided.", e);
                 }
             }
             
             // Update Overlay
-            overlayProv.innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${actData.org}`;
-            overlay.style.opacity = 1;
-            setTimeout(() => { overlay.style.opacity = 0; }, 2500);
+            if(overlayProv && overlay) {
+                overlayProv.innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${actData.org}`;
+                overlay.style.opacity = 1;
+                setTimeout(() => { overlay.style.opacity = 0; }, 2500);
+            }
+        }
+
+        function createFeedHTML(item, isFeedback) {
+            const timeStr = new Date().toLocaleTimeString();
+            if (!isFeedback) {
+                return `
+                    <div class="text-[10px] md:text-xs text-text-secondary mb-1"><i class="fa-solid fa-bullhorn mr-1"></i> ${timeStr}</div>
+                    <div class="text-white text-xs md:text-sm leading-relaxed">
+                        <span class='text-accent font-medium'>${item.org}</span> <span class='${item.color} font-bold'>${item.action}</span> เรื่อง <span class='text-white'>${item.topic}</span>
+                    </div>
+                `;
+            } else {
+                let detailHtml = "";
+                if (item.type === "rating") {
+                    let starsHtml = "";
+                    for(let i=0; i<item.stars; i++) starsHtml += `<i class="fa-solid fa-star text-yellow-500"></i>`;
+                    detailHtml = `ได้รับ <span class="text-yellow-400 font-bold tracking-widest text-[10px] ml-1">${starsHtml} ${item.stars} ดาว</span> เรื่อง`;
+                } else {
+                    detailHtml = `ได้รับคำแนะนำว่า <span class="text-success italic">"${item.msg}"</span> เรื่อง`;
+                }
+                
+                return `
+                    <div class="text-[10px] md:text-xs text-text-secondary mb-1"><i class="fa-solid fa-comment-dots text-red-400 mr-1"></i> ${timeStr}</div>
+                    <div class="text-white text-xs md:text-sm leading-relaxed">
+                        <span class='text-accent font-medium'>${item.org}</span> ${detailHtml} <span class='text-white font-medium'>${item.topic}</span>
+                    </div>
+                `;
+            }
         }
 
         function initFeeds() {
-            for(let i=0; i<5; i++) {
+            for(let i=0; i<3; i++) {
                 const act = liveActivities[i % liveActivities.length];
-                const html = `
-                    <div class="text-xs text-text-secondary mb-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</div>
-                    <div class="text-white">หน่วยงาน <span class='text-accent font-medium'>${act.org}</span> <span class='${act.color} font-bold'>${act.action}</span> เรื่อง <span class='text-white'>${act.topic}</span></div>
-                `;
-                pushFeed('activity-feed', html, 5);
+                pushFeed('combined-feed', createFeedHTML(act, false), 6);
                 
                 const fb = feedback[i % feedback.length];
-                pushFeed('testimonial-feed', `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-accent bg-accent/10 px-2 py-0.5 rounded text-xs">${fb.type}</span>
-                        <span class="text-xs text-white font-medium truncate ml-2">${fb.title}</span>
-                    </div>
-                    <div class="italic text-white/80 leading-relaxed text-sm">"${fb.msg}"</div>
-                `, 5);
+                pushFeed('combined-feed', createFeedHTML(fb, true), 6);
             }
         }
 
         setInterval(() => {
             if(!document.getElementById('tab-activity').classList.contains('active')) return;
 
-            const act = liveActivities[currentActivityIndex % liveActivities.length];
-            const html = `
-                <div class="text-xs text-text-secondary mb-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ${new Date().toLocaleTimeString()}</div>
-                <div class="text-white">หน่วยงาน <span class='text-accent font-medium'>${act.org}</span> <span class='${act.color} font-bold'>${act.action}</span> เรื่อง <span class='text-white'>${act.topic}</span></div>
-            `;
+            let selectedItem;
+            let isFeedback = false;
             
-            pushFeed('activity-feed', html, 5);
-            triggerActivityMapPan(act); 
-            
-            if(Math.random() > 0.5) {
-                const fb = feedback[Math.floor(Math.random() * feedback.length)];
-                pushFeed('testimonial-feed', `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-accent bg-accent/10 px-2 py-0.5 rounded text-xs">${fb.type}</span>
-                        <span class="text-xs text-white font-medium truncate ml-2">${fb.title}</span>
-                    </div>
-                    <div class="italic text-white/80 leading-relaxed text-sm">"${fb.msg}"</div>
-                `, 5);
+            // Randomly pick between system activity and citizen feedback
+            if (Math.random() > 0.4) {
+                selectedItem = liveActivities[currentActivityIndex % liveActivities.length];
+            } else {
+                selectedItem = feedback[Math.floor(Math.random() * feedback.length)];
+                isFeedback = true;
             }
+            
+            pushFeed('combined-feed', createFeedHTML(selectedItem, isFeedback), 6);
+            triggerActivityMapPan(selectedItem); 
             
             currentActivityIndex++;
         }, 4000);
@@ -865,42 +945,6 @@
             document.getElementById('count-pending').innerText = counts.pending;
             document.getElementById('count-partial').innerText = counts.partial;
         }
-
-        const mapGroupsList = [];
-
-        document.querySelectorAll('#map-container .province').forEach(group => {
-            let thaiName = group.querySelector('title')?.textContent.split(' ')[0] || "";
-            if (aliasMap[thaiName]) thaiName = aliasMap[thaiName];
-            group.dataset.province = thaiName;
-            const info = provinceData[thaiName] || { date: "-", status: "partial" };
-            
-            mapGroupsList.push({ el: group, name: thaiName, data: info, dateObj: parseThaiDate(info.date) });
-
-            group.addEventListener('mouseenter', () => {
-                if(window.innerWidth >= 768) {
-                    const li = document.querySelector(`[data-list-prov="${thaiName}"]`);
-                    if(li) {
-                        const gridWrapper = li.closest('.grid')?.parentElement;
-                        if (gridWrapper && gridWrapper.classList.contains('hidden')) {
-                             gridWrapper.classList.remove('hidden');
-                             const icon = gridWrapper.previousElementSibling.querySelector('.fa-chevron-down');
-                             if(icon) icon.classList.add('rotate-180');
-                        }
-                        listContainer?.scrollTo({ top: li.offsetTop - 120, behavior: 'smooth' });
-                        li.classList.add('list-item-highlight');
-                        setTimeout(() => li.classList.remove('list-item-highlight'), 1000);
-                    }
-                }
-            });
-            
-             group.addEventListener('mousemove', (e) => {
-                dynamicTooltip.style.opacity = 1;
-                dynamicTooltip.innerHTML = `<div class="text-center"><strong>${thaiName}</strong><br><span class="text-xs opacity-80 block mb-1">${info.date !== '-' ? info.date : ''}</span><div class="mt-1 pt-1 border-t border-white/10 text-xs">${statusLabels[info.status]}</div></div>`;
-                dynamicTooltip.style.left = e.pageX + 'px';
-                dynamicTooltip.style.top = (e.pageY - 10) + 'px';
-            });
-            group.addEventListener('mouseleave', () => dynamicTooltip.style.opacity = 0);
-        });
 
         function renderList(filterText = "") {
             if (!listContainer) return;
@@ -960,6 +1004,9 @@
         }
 
         function playMapSequence() {
+            // Only play if on stats tab
+            if(!document.getElementById('tab-stats').classList.contains('active')) return;
+
             const timeline = mapGroupsList.filter(d => d.data.status !== 'partial').sort((a, b) => a.dateObj - b.dateObj);
             const orderedDates = timeline.map(d => d.data.date).filter((v, i, a) => a.indexOf(v) === i);
             const dotsByDate = {};
@@ -978,12 +1025,6 @@
                         item.el.classList.add('animating-flip');
                         setTimeout(() => item.el.classList.add(item.data.status), 150);
                         setTimeout(() => item.el.classList.remove('animating-flip'), 300);
-                        
-                        const li = document.querySelector(`[data-list-prov="${item.name}"]`);
-                        if (li && li.offsetParent !== null) { 
-                            li.classList.add('list-item-highlight');
-                            setTimeout(() => li.classList.remove('list-item-highlight'), 400);
-                        }
                     });
                 }, delay);
                 delay += 100;
